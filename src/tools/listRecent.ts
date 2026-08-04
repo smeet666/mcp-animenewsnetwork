@@ -121,6 +121,7 @@ export async function runListRecent(client: AnnClient, args: ListRecentArgs): Pr
         notes,
       },
       summary,
+      { notes },
     );
   } catch (error) {
     return toToolError(error);

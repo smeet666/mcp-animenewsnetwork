@@ -98,8 +98,18 @@ export interface ToolResult {
 export function ok(
   structured: Record<string, unknown>,
   body: string,
-  trailer = ATTRIBUTION,
+  options: { notes?: string[]; sourceUrl?: string } = {},
 ): ToolResult {
+  const attribution = options.sourceUrl ? `${ATTRIBUTION} — ${options.sourceUrl}` : ATTRIBUTION;
+  // The notes are what qualifies the answer: that a list was capped, that a
+  // section is empty rather than unread. They sit with the attribution because
+  // that is the part of the block truncation cannot reach.
+  const noteLines = (options.notes ?? []).map((note) => `Note: ${note}`);
+  while (noteLines.length > 0 && noteLines.join("\n").length > MAX_TEXT_MIRROR_CHARS / 2) {
+    noteLines.pop();
+  }
+  const trailer = [...noteLines, attribution].join("\n");
+
   const cutMarker = "\n\n[shortened; the full result is in the structured output]";
   const budget = MAX_TEXT_MIRROR_CHARS - `\n\n${trailer}`.length;
 

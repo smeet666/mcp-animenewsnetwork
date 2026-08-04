@@ -102,6 +102,7 @@ export async function runGetNews(client: AnnClient, args: GetNewsArgs): Promise<
         notes,
       },
       summary,
+      { notes },
     );
   } catch (error) {
     return toToolError(error);

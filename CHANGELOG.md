@@ -1,5 +1,27 @@
 # Changelog
 
+## 1.1.0
+
+The nightly canary caught the site tagging its Japanese cast like any other
+language, where it used to leave the original untagged. Two things followed.
+
+- `lang` no longer claims that a null marks the original cast. It never will
+  again: every credit now carries a language, and null means the site recorded
+  none rather than anything about the credit.
+- Trim a cast without losing a language. Credits arrive ordered alphabetically
+  by language, so taking the first sixty answered "who voices Spike Spiegel"
+  with the German dub actor and dropped the Japanese, Korean, Portuguese and
+  Tagalog casts entirely. Each language keeps a share of the budget, the site's
+  own order is preserved, and the new `cast_languages` reports the full count
+  per language so a trimmed list still shows what exists.
+- Render the sections in the text block. It announced "Also returned: cast,
+  news, reviews" and printed none of them, so a client rendering only text paid
+  for a section and received a promise. Cast, staff, episodes, releases, related
+  entries, news and reviews are printed, and the notes with them.
+- Say when a requested section is genuinely empty. An empty list and a section
+  that could not be read looked identical, and a manga has no episodes by
+  construction.
+
 ## 1.0.1
 
 - Keep the source credit on the text block when it has to be shortened. The

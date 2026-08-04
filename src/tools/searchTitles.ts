@@ -76,7 +76,9 @@ export async function runSearchTitles(
         ? `No encyclopedia entry matched "${args.query}".`
         : `${results.length} entr${results.length === 1 ? "y" : "ies"} for "${args.query}":\n${renderTitleList(results)}`;
 
-    return ok({ query: args.query, results, total_available: filtered.length, notes }, summary);
+    return ok({ query: args.query, results, total_available: filtered.length, notes }, summary, {
+      notes,
+    });
   } catch (error) {
     return toToolError(error);
   }

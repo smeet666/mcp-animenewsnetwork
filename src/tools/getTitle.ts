@@ -10,7 +10,6 @@ import { z } from "zod";
 import type { AnnClient } from "../ann/client.js";
 import type { TitleDetail } from "../types.js";
 import {
-  ATTRIBUTION,
   ok,
   sliceAtLineBoundary,
   titleSummarySchema,
@@ -77,7 +76,14 @@ const castSchema = z.object({
   role: z.string(),
   person: z.string(),
   person_id: z.number().int().nullable(),
-  lang: z.string().nullable().describe("Dub language. Null marks the original cast."),
+  lang: z
+    .string()
+    .nullable()
+    .describe(
+      "Language of this credit, such as 'JA' for the Japanese cast of a Japanese production or 'FR' " +
+        "for the French dub. Null when the site records none, which is not a claim that the credit " +
+        "is the original one.",
+    ),
 });
 
 const staffSchema = z.object({
@@ -144,6 +150,13 @@ export const getTitleOutputShape = {
   next_offset: z.number().int().nullable().describe("Pass as 'offset' to read the rest."),
   truncated: z.boolean(),
   cast: z.array(castSchema).optional(),
+  cast_languages: z
+    .array(z.object({ lang: z.string().nullable(), credits: z.number().int() }))
+    .optional()
+    .describe(
+      "Every language the site records a cast in, with its full credit count, so a trimmed 'cast' " +
+        "still shows what exists. Ask again with a narrower question if a language you need was cut.",
+    ),
   staff: z.array(staffSchema).optional(),
   companies: z.array(companySchema).optional(),
   episodes: z.array(episodeSchema).optional(),
@@ -213,12 +226,14 @@ export async function runGetTitle(client: AnnClient, args: GetTitleArgs): Promis
     };
 
     if (wanted.has("cast")) {
-      structured.cast = capped(data.cast, CAPS.cast, "cast credits", notes).map((credit) => ({
+      const kept = capCastAcrossLanguages(data.cast, CAPS.cast, notes);
+      structured.cast = kept.map((credit) => ({
         role: credit.role,
         person: credit.person,
         person_id: credit.personId,
         lang: credit.lang,
       }));
+      structured.cast_languages = tallyLanguages(data.cast);
     }
     if (wanted.has("staff")) {
       structured.staff = capped(data.staff, CAPS.staff, "staff credits", notes).map((credit) => ({
@@ -248,10 +263,66 @@ export async function runGetTitle(client: AnnClient, args: GetTitleArgs): Promis
       structured.reviews = capped(data.reviews, CAPS.reviews, "linked reviews", notes);
     }
 
-    return ok(structured, renderSummary(data, slice, wanted), `${ATTRIBUTION} — ${data.sourceUrl}`);
+    for (const section of wanted) {
+      const value = structured[section === "staff" ? "staff" : section];
+      if (Array.isArray(value) && value.length === 0) {
+        notes.push(
+          `Anime News Network lists no ${section} for this entry, so the empty list is an absence rather than a failure to read it.`,
+        );
+      }
+    }
+
+    return ok(structured, renderSummary(data, slice, wanted, structured), {
+      notes,
+      sourceUrl: data.sourceUrl,
+    });
   } catch (error) {
     return toToolError(error);
   }
+}
+
+/**
+ * Trim a cast without losing a language.
+ *
+ * Credits arrive ordered alphabetically by language, so taking the first N
+ * answers "who voices this character" with whichever dub sorts first and can
+ * drop the Japanese cast entirely. Each language keeps a share of the budget
+ * instead, and the languages the site knows about are reported whole.
+ */
+function capCastAcrossLanguages<T extends { lang: string | null }>(
+  credits: T[],
+  cap: number,
+  notes: string[],
+): T[] {
+  if (credits.length <= cap) return credits;
+
+  const byLanguage = new Map<string, T[]>();
+  for (const credit of credits) {
+    const key = credit.lang ?? "";
+    const bucket = byLanguage.get(key);
+    if (bucket) bucket.push(credit);
+    else byLanguage.set(key, [credit]);
+  }
+
+  const share = Math.max(1, Math.floor(cap / byLanguage.size));
+  const kept: T[] = [];
+  for (const bucket of byLanguage.values()) kept.push(...bucket.slice(0, share));
+
+  notes.push(
+    `${credits.length} cast credits exist across ${byLanguage.size} languages and up to ${share} per ` +
+      "language are shown. 'cast_languages' gives the full count for each.",
+  );
+  // Restore the site's own order, so the list still reads as it publishes it.
+  const keptSet = new Set(kept);
+  return credits.filter((credit) => keptSet.has(credit));
+}
+
+function tallyLanguages<T extends { lang: string | null }>(
+  credits: T[],
+): Array<{ lang: string | null; credits: number }> {
+  const counts = new Map<string | null, number>();
+  for (const credit of credits) counts.set(credit.lang, (counts.get(credit.lang) ?? 0) + 1);
+  return [...counts.entries()].map(([lang, count]) => ({ lang, credits: count }));
 }
 
 function capped<T>(items: T[], cap: number, label: string, notes: string[]): T[] {
@@ -260,7 +331,29 @@ function capped<T>(items: T[], cap: number, label: string, notes: string[]): T[]
   return items.slice(0, cap);
 }
 
-function renderSummary(data: TitleDetail, plot: string, wanted: Set<string>): string {
+/** One line per credit, short enough that a long cast still fits the block. */
+function renderPeople(
+  label: string,
+  rows: Array<{ role?: string; task?: string; person: string; lang?: string | null }>,
+): string[] {
+  if (rows.length === 0) return [];
+  return [
+    "",
+    `${label}:`,
+    ...rows.map((row) => {
+      const what = row.role ?? row.task ?? "";
+      const lang = row.lang ? ` [${row.lang}]` : "";
+      return `  ${what ? `${what}: ` : ""}${row.person}${lang}`;
+    }),
+  ];
+}
+
+function renderSummary(
+  data: TitleDetail,
+  plot: string,
+  wanted: Set<string>,
+  structured: Record<string, unknown>,
+): string {
   const header = [
     data.name,
     data.precision ? `(${data.precision})` : "",
@@ -278,10 +371,39 @@ function renderSummary(data: TitleDetail, plot: string, wanted: Set<string>): st
   }
   if (plot) lines.push("", plot);
 
-  const extras = ["cast", "staff", "episodes", "releases", "related", "news", "reviews"].filter(
-    (s) => wanted.has(s),
-  );
-  if (extras.length > 0) lines.push("", `Also returned: ${extras.join(", ")}.`);
+  // Announcing a section without printing it left a text-only client with the
+  // promise and none of the content it paid a request for.
+  const cast = (structured.cast ?? []) as Array<{
+    role: string;
+    person: string;
+    lang: string | null;
+  }>;
+  const staff = (structured.staff ?? []) as Array<{ task: string; person: string }>;
+  lines.push(...renderPeople("Cast", cast));
+  lines.push(...renderPeople("Staff", staff));
+
+  const episodes = (structured.episodes ?? []) as Array<{ number: string; title: string | null }>;
+  if (episodes.length > 0) {
+    lines.push("", "Episodes:");
+    for (const episode of episodes)
+      lines.push(`  ${episode.number}. ${episode.title ?? ""}`.trimEnd());
+  }
+
+  for (const [section, label] of [
+    ["releases", "Releases"],
+    ["related", "Related"],
+    ["news", "News"],
+    ["reviews", "Reviews"],
+  ] as const) {
+    const rows = (structured[section] ?? []) as Array<Record<string, unknown>>;
+    if (!wanted.has(section) || rows.length === 0) continue;
+    lines.push("", `${label}:`);
+    for (const row of rows) {
+      const title = (row.title ?? row.name ?? row.story ?? "") as string;
+      const link = (row.link ?? row.url ?? row.sourceUrl ?? "") as string;
+      lines.push(`  ${title || JSON.stringify(row)}${link ? ` — ${link}` : ""}`);
+    }
+  }
 
   return lines.join("\n");
 }

@@ -61,10 +61,24 @@ describe.runIf(enabled)("live Anime News Network", () => {
     expect(serialized, "a cast credit leaked into search results").not.toContain('"role"');
     expect(serialized, "a staff credit leaked into search results").not.toContain('"task"');
     expect(serialized, "an episode leaked into search results").not.toContain('"episodes"');
+    // A total is the wrong guard: the catalogue grows, and a bigger answer to a
+    // popular query is not a leak. What must hold is the shape of a row and its
+    // weight, which is what a leak would change.
+    for (const row of search.data) {
+      expect(Object.keys(row).sort()).toEqual([
+        "id",
+        "kind",
+        "name",
+        "precision",
+        "sourceUrl",
+        "type",
+        "vintage",
+      ]);
+    }
     expect(
-      serialized.length,
-      `search results weigh ${serialized.length} bytes; the records are leaking through`,
-    ).toBeLessThan(5_000);
+      serialized.length / Math.max(1, search.data.length),
+      `a search row weighs ${Math.round(serialized.length / Math.max(1, search.data.length))} bytes; a record is leaking through`,
+    ).toBeLessThan(500);
   }, 120_000);
 
   it("still answers a search that matches nothing with an empty list", async () => {
@@ -99,11 +113,14 @@ describe.runIf(enabled)("live Anime News Network", () => {
     ).toBeGreaterThan(0);
     expect(
       title.data.cast.some((credit) => credit.lang !== null),
-      "no credit carried a dub language: the lang attribute may have moved",
+      "no credit carried a language: the lang attribute may have moved",
     ).toBe(true);
+    // The site tags the Japanese cast like any other language, so its presence
+    // is what proves the original cast is reachable. Absence of a lang no
+    // longer means anything about a credit.
     expect(
-      title.data.cast.some((credit) => credit.lang === null),
-      "every credit carried a language: the original cast is being read as a dub",
+      title.data.cast.some((credit) => credit.lang === "JA"),
+      "no Japanese credit: the original cast is missing from the record",
     ).toBe(true);
   }, 120_000);
 
