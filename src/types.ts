@@ -109,6 +109,19 @@ export interface ReportRow {
   sourceUrl: string | null;
 }
 
+/**
+ * One page of a report.
+ *
+ * `itemCount` is how many <item> elements the site sent, which is not always
+ * how many rows could be read. Paging must be computed from the former: the
+ * upstream `nskip` counts items, so advancing by the row count would re-serve
+ * or skip entries whenever one is dropped.
+ */
+export interface ReportPage {
+  rows: ReportRow[];
+  itemCount: number;
+}
+
 export interface NewsItem {
   title: string;
   link: string;

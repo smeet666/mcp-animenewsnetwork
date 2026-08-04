@@ -36,19 +36,23 @@ import {
 } from "./xml.js";
 
 /**
- * Turn the site's own failure signal into an error.
+ * Read the site's own failure signal.
  *
  * Anime News Network answers everything with HTTP 200 and reports failures in
- * the body, so this is the only place that distinction gets made. Letting a
- * warning through as an empty list would tell a model the series does not
- * exist, which is a different and much worse answer than "the request failed".
+ * the body, so this is the only place that distinction gets made.
+ *
+ * "no result" is the one warning that is not a failure by itself. Asking for an
+ * id that does not exist is a genuine absence, while searching for a name that
+ * matches nothing is an ordinary empty answer, and only the caller knows which
+ * of the two it asked for. Every other warning means the request itself was
+ * refused, whatever the caller intended.
  */
-function assertNoWarning(root: XmlElement, url: string, what: string): void {
+function readWarning(root: XmlElement): "no-result" | null {
   const warning = firstChild(root, EL.warning);
-  if (!warning) return;
+  if (!warning) return null;
 
   const text = textOf(warning) ?? "";
-  if (/no result/i.test(text)) throw notFound(url, what);
+  if (/no result/i.test(text)) return "no-result";
   throw invalidInput(
     `Anime News Network refused the request: ${text || "no reason given"}`,
     "Check the id or the query passed to this tool.",
@@ -107,12 +111,24 @@ function toSummary(element: XmlElement, kind: TitleKind): TitleSummary | null {
   };
 }
 
+/**
+ * Reported when records had to be dropped.
+ *
+ * A gap between what the site sent and what could be read is how a shape change
+ * announces itself, so it must not be silent. It goes through the caller's
+ * logger rather than straight to stderr, so it honours ANN_LOG_LEVEL.
+ */
+export type OnSkip = (skipped: number, total: number) => void;
+
 /** Search results, reduced to rows. Everything heavy is dropped here. */
-export function parseTitleList(xml: string, url: string): TitleSummary[] {
+export function parseTitleList(xml: string, url: string, onSkip?: OnSkip): TitleSummary[] {
   const root = expectRoot(parseDocument(xml, url), EL.root, url);
   const records = titleRecords(root);
   if (records.length === 0) {
-    assertNoWarning(root, url, "that query");
+    // A search that matches nothing is an answer, not a failure. Reporting it as
+    // not_found would make the tool fail on a perfectly good query and leave the
+    // model with nothing useful to do next.
+    readWarning(root);
     return [];
   }
 
@@ -126,11 +142,7 @@ export function parseTitleList(xml: string, url: string): TitleSummary[] {
     throw parseFailure(url, `${records.length} records but none carried an id and a name`);
   }
   const skipped = records.length - rows.length;
-  if (skipped > 0) {
-    process.stderr.write(
-      `[mcp-animenewsnetwork] skipped ${skipped} unreadable records on ${url}\n`,
-    );
-  }
+  if (skipped > 0) onSkip?.(skipped, records.length);
 
   return rows;
 }
@@ -141,7 +153,8 @@ export function parseTitleDetail(xml: string, url: string, what: string): TitleD
 
   const first = records[0];
   if (!first) {
-    assertNoWarning(root, url, what);
+    // Here the caller named one entry, so "no result" does mean it is absent.
+    readWarning(root);
     throw notFound(url, what);
   }
 

@@ -107,13 +107,27 @@ describe("search_titles", () => {
     for (const row of rows) expect(row.kind).toBe("manga");
   });
 
-  it("surfaces an upstream warning as an error carrying its code", async () => {
-    // Anime News Network answers its failures with HTTP 200, so a warning read
-    // as an empty list would tell the user the series does not exist.
-    const client = await connect(fixtureRouter({ "api.xml?title=": "warning-no-result.xml" }).impl);
-    const result = await call(client, "search_titles", { query: "nothing at all" });
-    expect(result.isError).toBe(true);
-    expect(textOf(result)).toContain("not_found");
+  it("reports a search that matched nothing as a success with no rows", async () => {
+    // The site answers an empty search with the same <warning> element it uses
+    // for failures. Surfacing that as not_found told the model to call
+    // search_titles, which is the tool that had just answered.
+    const client = await connect(
+      fixtureRouter({ "api.xml?title=": "warning-no-search-results.xml" }).impl,
+    );
+    const result = await call(client, "search_titles", { query: "zzqq" });
+
+    expect(result.isError ?? false).toBe(false);
+    const structured = result.structuredContent as {
+      results: unknown[];
+      total_available: number;
+      notes: string[];
+    };
+    expect(structured.results).toEqual([]);
+    expect(structured.total_available).toBe(0);
+    expect(structured.notes.join(" "), "the model needs to be told what to try next").toMatch(
+      /shorter fragment|title only/i,
+    );
+    expect(textOf(result)).not.toContain("not_found");
   });
 
   it("surfaces a non-XML body as a parse_failure error", async () => {
@@ -177,6 +191,33 @@ describe("list_recent", () => {
     const rows = (result.structuredContent as { rows: Record<string, unknown>[] }).rows;
     expect(rows).toHaveLength(3);
     for (const row of rows) expect(row.source_url, `row ${String(row.id)}`).not.toBeNull();
+  });
+
+  it("pages by what the site sent, not by what could be read", async () => {
+    // One unreadable entry used to shorten the page, which read as the end of
+    // the catalogue and, when it was not, shifted every later page by one.
+    const client = await connect(
+      fixtureRouter({ "reports.xml?id=148": "report-partial.xml" }).impl,
+    );
+    const result = await call(client, "list_recent", { kind: "anime", limit: 3, offset: 0 });
+
+    expect(result.isError ?? false).toBe(false);
+    const structured = result.structuredContent as {
+      rows: unknown[];
+      next_offset: number | null;
+      notes: string[];
+    };
+    expect(structured.rows).toHaveLength(2);
+    expect(structured.next_offset, "paging must advance by the full item count").toBe(3);
+    expect(structured.notes.join(" "), "a dropped entry must be reported, not hidden").toMatch(
+      /1 entr(y|ies).*(could not be read|skipped)/i,
+    );
+  });
+
+  it("stops paging when the site sends a short page", async () => {
+    const client = await connect(fixtureRouter().impl);
+    const result = await call(client, "list_recent", { kind: "anime", limit: 20 });
+    expect((result.structuredContent as { next_offset: number | null }).next_offset).toBeNull();
   });
 
   it("browses titles alphabetically when given a starting letter", async () => {

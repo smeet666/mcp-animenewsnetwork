@@ -20,6 +20,7 @@ jobs:
       - run: npm ci
       - run: npm run typecheck
       # Unit tests only. The live suite is opt-in and would put pointless load
-      # on lyrics.com from shared runners.
+      # on Anime News Network from shared runners, whose addresses are shared
+      # by every project using them and already close to the one-per-second limit.
       - run: npm test
       - run: npm run build

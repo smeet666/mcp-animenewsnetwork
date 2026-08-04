@@ -1,0 +1,131 @@
+import { describe, expect, it } from "vitest";
+import { AnnClient } from "../../src/ann/client.js";
+import { createLogger } from "../../src/config.js";
+import { fixtureRouter, fixtureText, testConfig, xmlResponse } from "./_helpers.js";
+import { AnnError } from "../../src/errors.js";
+
+const logger = createLogger("silent");
+
+/** A configuration with caching on, since the default test config disables it. */
+function cachingConfig() {
+  return testConfig({ cacheTtlMs: 60_000, newsCacheTtlMs: 60_000, cacheMaxEntries: 50 });
+}
+
+describe("AnnClient caching", () => {
+  it("serves a repeated request from memory without asking the site again", async () => {
+    const stub = fixtureRouter();
+    const client = new AnnClient({ config: cachingConfig(), logger, fetchImpl: stub.impl });
+
+    const first = await client.searchTitles("placeholder");
+    const second = await client.searchTitles("placeholder");
+
+    expect(first.cached).toBe(false);
+    expect(second.cached).toBe(true);
+    expect(stub.calls, "the second identical call went back to the network").toHaveLength(1);
+    expect(second.data).toEqual(first.data);
+  });
+
+  it("keys the cache by request, so a different query still goes out", async () => {
+    const stub = fixtureRouter();
+    const client = new AnnClient({ config: cachingConfig(), logger, fetchImpl: stub.impl });
+
+    await client.searchTitles("placeholder");
+    const other = await client.searchTitles("something else");
+
+    expect(other.cached).toBe(false);
+    expect(stub.calls).toHaveLength(2);
+  });
+
+  it("caches the news wire separately from the encyclopedia", async () => {
+    const stub = fixtureRouter();
+    const client = new AnnClient({ config: cachingConfig(), logger, fetchImpl: stub.impl });
+
+    await client.getNews("all", "us");
+    const second = await client.getNews("all", "us");
+
+    expect(second.cached).toBe(true);
+    expect(stub.calls).toHaveLength(1);
+  });
+
+  it("holds the parsed rows rather than the response body", async () => {
+    // A single search response reaches 1.4 MB, against a couple of kilobytes of
+    // rows. Caching the body would keep in memory the very thing this server
+    // exists to keep out of it.
+    const searchResults = fixtureText("search-results.xml");
+    const stub = fixtureRouter();
+    const client = new AnnClient({ config: cachingConfig(), logger, fetchImpl: stub.impl });
+
+    const first = await client.searchTitles("placeholder");
+    const second = await client.searchTitles("placeholder");
+
+    expect(JSON.stringify(second.data).length).toBeLessThan(searchResults.length / 5);
+    expect(second.data, "the cached value must be the parsed result").toEqual(first.data);
+  });
+
+  it("does not cache a response it could not read", async () => {
+    // A garbage response used to be pinned for the whole cache lifetime and
+    // replayed at every retry, so the tool could not recover even once the site
+    // was healthy again.
+    const bodies = [fixtureText("html-page.html"), fixtureText("search-results.xml")];
+    let call = 0;
+    const impl = (async () => xmlResponse(bodies[Math.min(call++, 1)] as string)) as typeof fetch;
+    const client = new AnnClient({ config: cachingConfig(), logger, fetchImpl: impl });
+
+    await expect(client.searchTitles("placeholder")).rejects.toBeInstanceOf(AnnError);
+
+    const recovered = await client.searchTitles("placeholder");
+    expect(recovered.cached, "the failure was replayed from cache").toBe(false);
+    expect(recovered.data.length).toBeGreaterThan(0);
+    expect(call, "the second call did not reach the network").toBe(2);
+  });
+
+  it("does not cache an upstream failure either", async () => {
+    const bodies: Array<() => Response> = [
+      () => new Response("", { status: 500 }),
+      () => xmlResponse(fixtureText("search-results.xml")),
+    ];
+    let call = 0;
+    const impl = (async () => (bodies[Math.min(call++, 1)] as () => Response)()) as typeof fetch;
+    const client = new AnnClient({ config: cachingConfig(), logger, fetchImpl: impl });
+
+    await expect(client.searchTitles("placeholder")).rejects.toBeInstanceOf(AnnError);
+    const recovered = await client.searchTitles("placeholder");
+
+    expect(recovered.cached).toBe(false);
+    expect(recovered.data.length).toBeGreaterThan(0);
+  });
+
+  it("goes back to the network on every call when the cache is switched off", async () => {
+    const stub = fixtureRouter();
+    const client = new AnnClient({ config: testConfig(), logger, fetchImpl: stub.impl });
+
+    const first = await client.searchTitles("placeholder");
+    const second = await client.searchTitles("placeholder");
+
+    expect(first.cached).toBe(false);
+    expect(second.cached).toBe(false);
+    expect(stub.calls).toHaveLength(2);
+  });
+});
+
+describe("AnnClient report paging", () => {
+  it("reports how many entries the site sent alongside the rows it could read", async () => {
+    const stub = fixtureRouter({ "reports.xml?id=148": "report-partial.xml" });
+    const client = new AnnClient({ config: testConfig(), logger, fetchImpl: stub.impl });
+
+    const page = await client.listRecent("anime", 3, 0);
+
+    expect(page.data.rows).toHaveLength(2);
+    expect(page.data.itemCount, "paging counts items upstream, not readable rows").toBe(3);
+  });
+
+  it("returns the same shape from an alphabetical browse", async () => {
+    const stub = fixtureRouter();
+    const client = new AnnClient({ config: testConfig(), logger, fetchImpl: stub.impl });
+
+    const page = await client.browseTitles({ limit: 5, offset: 0, type: "anime", startsWith: "P" });
+
+    expect(page.data.rows).toHaveLength(5);
+    expect(page.data.itemCount).toBe(5);
+  });
+});

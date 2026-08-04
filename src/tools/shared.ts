@@ -127,8 +127,17 @@ export function sliceAtLineBoundary(
 
   const window = rest.slice(0, maxChars);
   const lastBreak = window.lastIndexOf("\n");
-  const cut = lastBreak > 0 ? lastBreak : maxChars;
+  let cut = lastBreak > 0 ? lastBreak : maxChars;
+
+  // Never cut between the two halves of a surrogate pair: both pages would show
+  // a replacement character and no offset could ever reassemble the character.
+  if (isHighSurrogate(rest.charCodeAt(cut - 1))) cut -= 1;
+
   return { slice: rest.slice(0, cut), nextOffset: offset + cut };
+}
+
+function isHighSurrogate(code: number): boolean {
+  return code >= 0xd800 && code <= 0xdbff;
 }
 
 /** Compact listing, showing what a model needs to pick the right entry. */

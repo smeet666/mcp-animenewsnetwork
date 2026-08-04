@@ -1,11 +1,11 @@
 /**
  * Serial request queue with an adaptive minimum interval.
  *
- * lyrics.com tolerates a steady trickle but stops answering after a short burst,
- * so requests are run one at a time with a floor on the gap between starts.
- * When the site does push back, the interval doubles and then decays back down
- * as requests succeed, which recovers faster than a fixed delay and behaves
- * better than hammering at a constant rate.
+ * Anime News Network limits callers to one request per second per IP and delays
+ * anything faster rather than refusing it, so requests are run one at a time
+ * with a floor on the gap between them. When the site does push back with a 503,
+ * the interval doubles and then decays back down as requests succeed, which
+ * recovers faster than a fixed delay and behaves better than a constant rate.
  */
 
 export interface RateLimiterOptions {
@@ -36,19 +36,34 @@ export class RateLimiter {
     return this.intervalMs;
   }
 
-  /** Queue a task. Tasks run in call order, one at a time. */
+  /**
+   * Queue a task. Tasks run in call order, one at a time.
+   *
+   * A task may send several requests, since the retry loop lives inside its
+   * slot. It must call `beforeRequest` around each of them: the pacing is
+   * measured between requests, and stamping only the start of the task would
+   * let the next one follow a long retry chain's final request immediately.
+   */
   schedule<T>(task: () => Promise<T>): Promise<T> {
-    const run = this.tail.then(async () => {
-      await this.waitForSlot();
-      this.lastStart = Date.now();
-      return task();
-    });
+    const run = this.tail.then(async () => task());
     // The queue must keep draining even when a task rejects.
     this.tail = run.then(
       () => undefined,
       () => undefined,
     );
     return run;
+  }
+
+  /**
+   * Wait for this request's slot, then claim it.
+   *
+   * Called once per upstream request rather than once per task, so every
+   * request is paced from the previous one whether or not they belong to the
+   * same retry chain.
+   */
+  async beforeRequest(): Promise<void> {
+    await this.waitForSlot();
+    this.lastStart = Date.now();
   }
 
   /** Called after the site signals it is under load. */

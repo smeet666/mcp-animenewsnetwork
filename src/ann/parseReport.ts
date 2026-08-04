@@ -13,7 +13,7 @@
 
 import { XmlElement } from "@rgrove/parse-xml";
 import { parseFailure } from "../errors.js";
-import type { ReportRow } from "../types.js";
+import type { ReportPage, ReportRow } from "../types.js";
 import { ATTR, REPORT_EL } from "./paths.js";
 import { absoluteSiteUrl, titlePageUrl } from "./urls.js";
 import { attr, children, childText, expectRoot, parseDocument, textOf } from "./xml.js";
@@ -21,10 +21,10 @@ import { attr, children, childText, expectRoot, parseDocument, textOf } from "./
 const LINK_ELEMENTS = ["anime", "manga", "person", "company"] as const;
 type LinkKind = (typeof LINK_ELEMENTS)[number];
 
-export function parseReport(xml: string, url: string): ReportRow[] {
+export function parseReport(xml: string, url: string): ReportPage {
   const root = expectRoot(parseDocument(xml, url), REPORT_EL.root, url);
   const items = children(root, REPORT_EL.item);
-  if (items.length === 0) return [];
+  if (items.length === 0) return { rows: [], itemCount: 0 };
 
   const rows: ReportRow[] = [];
   let unreadable = 0;
@@ -39,13 +39,9 @@ export function parseReport(xml: string, url: string): ReportRow[] {
   if (rows.length === 0) {
     throw parseFailure(url, `${items.length} report rows but none could be read`);
   }
-  if (unreadable > 0) {
-    process.stderr.write(
-      `[mcp-animenewsnetwork] skipped ${unreadable} unreadable report rows on ${url}\n`,
-    );
-  }
-
-  return rows;
+  // The count is not logged here: it is carried in `itemCount`, and the tool
+  // turns the gap into a note the model can act on.
+  return { rows, itemCount: items.length };
 }
 
 /** The id=148..151 shape: one child naming the kind, carrying an href. */

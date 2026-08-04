@@ -241,6 +241,12 @@ const FIXTURES = {
   /** The failure the site reports for an id it does not know, under HTTP 200. */
   "warning-no-result.xml": ann("<warning>no result for anime=99999999</warning>"),
 
+  /**
+   * What a search matching nothing comes back as. Same warning element, plural
+   * wording, and a different meaning: the caller named no particular entry.
+   */
+  "warning-no-search-results.xml": ann("<warning>no results for title=~zzqq</warning>"),
+
   /** The other warning it serves, for a request it declined to run. */
   "warning-ignored.xml": ann("<warning>ignored </warning>"),
 
@@ -255,6 +261,18 @@ const FIXTURES = {
 
   /** A report that ran and matched nothing, which is a legitimate empty answer. */
   "report-empty.xml": report([], 0),
+
+  /**
+   * A full page where one entry cannot be read.
+   *
+   * Upstream paging counts items, not rows, so the dropped entry still has to
+   * be counted or every page after this one drifts by an entry.
+   */
+  "report-partial.xml": report([
+    recentItem("anime", 1),
+    "<item><unknown-column>an entry no shape recognises</unknown-column></item>",
+    recentItem("anime", 3),
+  ]),
 
   /** Items that carry nothing any shape recognises: not an empty answer. */
   "report-unreadable.xml": report([

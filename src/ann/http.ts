@@ -34,8 +34,10 @@ export interface HttpDeps {
 /**
  * Fetch one URL as text, retrying transient conditions.
  *
- * The retry loop and its sleeps run inside a single limiter slot, so a queued
- * request cannot slip into the window the current one is backing away from.
+ * The retry loop runs inside a single limiter slot, so a queued request cannot
+ * interleave with a chain that is backing off. Each attempt claims its own slot
+ * through `beforeRequest`, which is what keeps the pacing honest between the
+ * last request of one chain and the first request of the next.
  */
 export async function fetchText(url: string, deps: HttpDeps): Promise<string> {
   const { config, limiter, logger } = deps;
@@ -54,6 +56,7 @@ export async function fetchText(url: string, deps: HttpDeps): Promise<string> {
       let status: number;
       let body: string;
       try {
+        await limiter.beforeRequest();
         const response = await doFetch(url, {
           headers: {
             "User-Agent": config.userAgent,

@@ -7,7 +7,7 @@
 
 import type { Config, Logger } from "../config.js";
 import { createLogger, loadConfig } from "../config.js";
-import type { NewsItem, ReportRow, TitleDetail, TitleKind, TitleSummary } from "../types.js";
+import type { NewsItem, ReportPage, TitleDetail, TitleKind, TitleSummary } from "../types.js";
 import { TtlLruCache } from "./cache.js";
 import { fetchText } from "./http.js";
 import { parseFeed } from "./parseFeed.js";
@@ -46,20 +46,26 @@ export class AnnClient {
    * Two caches, because the two sources age at different speeds. The
    * encyclopedia barely moves and the site suggests holding it for a week; the
    * news wire publishes several times an hour.
+   *
+   * They hold parsed results rather than response bodies, for two reasons. A
+   * body is only worth keeping once it has been read successfully, so a broken
+   * response cannot be pinned for an hour and replayed at every retry. And the
+   * bodies are the very thing this server exists to keep out of memory: a single
+   * search response reaches 1.4 MB, against a couple of kilobytes of rows.
    */
-  private readonly encyclopediaCache: TtlLruCache<string>;
-  private readonly newsCache: TtlLruCache<string>;
+  private readonly encyclopediaCache: TtlLruCache<unknown>;
+  private readonly newsCache: TtlLruCache<unknown>;
   private readonly fetchImpl: typeof fetch | undefined;
 
   constructor(options: AnnClientOptions = {}) {
     this.config = options.config ?? loadConfig();
     this.logger = options.logger ?? createLogger(this.config.logLevel);
     this.limiter = new RateLimiter({ minIntervalMs: this.config.minIntervalMs });
-    this.encyclopediaCache = new TtlLruCache<string>(
+    this.encyclopediaCache = new TtlLruCache<unknown>(
       this.config.cacheMaxEntries,
       this.config.cacheTtlMs,
     );
-    this.newsCache = new TtlLruCache<string>(
+    this.newsCache = new TtlLruCache<unknown>(
       this.config.cacheMaxEntries,
       this.config.newsCacheTtlMs,
     );
@@ -75,20 +81,23 @@ export class AnnClient {
    */
   async searchTitles(query: string): Promise<Outcome<TitleSummary[]>> {
     const url = titleSearchUrl(query);
-    const { body, cached } = await this.fetchCached(url, this.encyclopediaCache);
-    return { data: parseTitleList(body, url), cached };
+    return this.fetchParsed(url, this.encyclopediaCache, (body) =>
+      parseTitleList(body, url, (skipped, total) => {
+        this.logger.info(`skipped ${skipped} of ${total} unreadable records on ${url}`);
+      }),
+    );
   }
 
   async getTitle(kind: TitleKind, id: number): Promise<Outcome<TitleDetail>> {
     const url = titleDetailUrl(kind, id);
-    const { body, cached } = await this.fetchCached(url, this.encyclopediaCache);
-    return { data: parseTitleDetail(body, url, `${kind} id ${id}`), cached };
+    return this.fetchParsed(url, this.encyclopediaCache, (body) =>
+      parseTitleDetail(body, url, `${kind} id ${id}`),
+    );
   }
 
-  async listRecent(kind: RecentKind, limit: number, offset: number): Promise<Outcome<ReportRow[]>> {
+  async listRecent(kind: RecentKind, limit: number, offset: number): Promise<Outcome<ReportPage>> {
     const url = recentReportUrl(RECENT_REPORT_IDS[kind], limit, offset);
-    const { body, cached } = await this.fetchCached(url, this.encyclopediaCache);
-    return { data: parseReport(body, url), cached };
+    return this.fetchParsed(url, this.encyclopediaCache, (body) => parseReport(body, url));
   }
 
   async browseTitles(options: {
@@ -96,26 +105,30 @@ export class AnnClient {
     offset: number;
     type?: TitleKind;
     startsWith?: string;
-  }): Promise<Outcome<ReportRow[]>> {
+  }): Promise<Outcome<ReportPage>> {
     const url = titleListReportUrl(options);
-    const { body, cached } = await this.fetchCached(url, this.encyclopediaCache);
-    return { data: parseReport(body, url), cached };
+    return this.fetchParsed(url, this.encyclopediaCache, (body) => parseReport(body, url));
   }
 
   async getNews(feed: FeedName, edition: Edition): Promise<Outcome<NewsItem[]>> {
     const url = feedUrl(feed, edition);
-    const { body, cached } = await this.fetchCached(url, this.newsCache);
-    return { data: parseFeed(body, url), cached };
+    return this.fetchParsed(url, this.newsCache, (body) => parseFeed(body, url));
   }
 
-  private async fetchCached(
+  /**
+   * Fetch, parse, then cache. In that order: a response that could not be read
+   * is never stored, so a bad minute upstream cannot be replayed from memory
+   * for the rest of the cache lifetime.
+   */
+  private async fetchParsed<T>(
     url: string,
-    cache: TtlLruCache<string>,
-  ): Promise<{ body: string; cached: boolean }> {
+    cache: TtlLruCache<unknown>,
+    parse: (body: string) => T,
+  ): Promise<Outcome<T>> {
     const hit = cache.get(url);
     if (hit !== undefined) {
       this.logger.debug(`cache hit ${url}`);
-      return { body: hit, cached: true };
+      return { data: hit as T, cached: true };
     }
 
     const body = await fetchText(url, {
@@ -124,7 +137,9 @@ export class AnnClient {
       logger: this.logger,
       ...(this.fetchImpl ? { fetchImpl: this.fetchImpl } : {}),
     });
-    cache.set(url, body);
-    return { body, cached: false };
+
+    const data = parse(body);
+    cache.set(url, data);
+    return { data, cached: false };
   }
 }

@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<report skipped="0" listed="3">
+<item>
+    <anime href="/encyclopedia/anime.php?id=40401">Placeholder Added anime 1 (TV 1)</anime>
+    <date_added>2026-08-03 06:01:41</date_added>
+    <unknown-column>noise the parser must ignore</unknown-column>
+  </item>
+<item><unknown-column>an entry no shape recognises</unknown-column></item>
+<item>
+    <anime href="/encyclopedia/anime.php?id=40403">Placeholder Added anime 3 (TV 3)</anime>
+    <date_added>2026-08-03 06:03:41</date_added>
+    <unknown-column>noise the parser must ignore</unknown-column>
+  </item>
+</report>

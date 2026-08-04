@@ -81,13 +81,21 @@ export async function runListRecent(client: AnnClient, args: ListRecentArgs): Pr
         })
       : await client.listRecent(args.kind, args.limit, args.offset);
 
-    const rows = data.map(toReportRowOut);
+    const rows = data.rows.map(toReportRowOut);
     const notes: string[] = [];
     if (cached) notes.push("Served from this server's short-lived in-memory cache.");
     if (rows.length === 0) notes.push("The report returned no rows at this offset.");
+    if (data.itemCount > data.rows.length) {
+      notes.push(
+        `${data.itemCount - data.rows.length} entries on this page could not be read and were skipped.`,
+      );
+    }
 
-    // A short page is the only end-of-list signal these reports give.
-    const nextOffset = rows.length < args.limit ? null : args.offset + rows.length;
+    // A short page is the only end-of-list signal these reports give, and it has
+    // to be judged on what the site sent rather than on what could be read.
+    // Upstream paging counts entries, so advancing by the row count would
+    // re-serve or skip an entry for every one that was dropped.
+    const nextOffset = data.itemCount < args.limit ? null : args.offset + data.itemCount;
 
     const heading = browsing
       ? `${args.kind} titles starting with "${args.starts_with}"`

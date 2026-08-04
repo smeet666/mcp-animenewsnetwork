@@ -47,6 +47,9 @@ export const DEFAULTS = {
  */
 export const MIN_ALLOWED_INTERVAL_MS = 1000;
 
+/** Ceiling on the request interval, so a typo cannot stall the server for hours. */
+export const MAX_ALLOWED_INTERVAL_MS = 60_000;
+
 const LOG_LEVELS: LogLevel[] = ["silent", "error", "info", "debug"];
 
 interface NumericRange {
@@ -110,7 +113,19 @@ function readInterval(env: NodeJS.ProcessEnv): number {
     return DEFAULTS.minIntervalMs;
   }
 
-  return Math.min(60_000, rounded);
+  // The upper bound is a guard against a typo that would stall the server for
+  // hours. Unlike readNumber, it clamps rather than falling back, because the
+  // default would be far faster than the value asked for: someone who wrote ten
+  // minutes wants slow, and answering that with 1100ms gets politeness backwards.
+  if (rounded > MAX_ALLOWED_INTERVAL_MS) {
+    warn(
+      `ANN_MIN_INTERVAL_MS=${raw} exceeds the ${MAX_ALLOWED_INTERVAL_MS}ms ceiling; ` +
+        `using ${MAX_ALLOWED_INTERVAL_MS}ms.`,
+    );
+    return MAX_ALLOWED_INTERVAL_MS;
+  }
+
+  return rounded;
 }
 
 export function loadConfig(env: NodeJS.ProcessEnv = process.env): Config {

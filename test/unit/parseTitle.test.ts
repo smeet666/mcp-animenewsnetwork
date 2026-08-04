@@ -10,6 +10,7 @@ const missingAttrs = fixtureText("title-missing-attrs.xml");
 const htmlPage = fixtureText("html-page.html");
 const feed = fixtureText("feed.xml");
 const noResult = fixtureText("warning-no-result.xml");
+const noSearchResults = fixtureText("warning-no-search-results.xml");
 const ignored = fixtureText("warning-ignored.xml");
 
 const URL_DETAIL = "https://cdn.animenewsnetwork.com/encyclopedia/api.xml?anime=4241";
@@ -84,20 +85,14 @@ describe("parseTitleList", () => {
   });
 
   describe("records the parser cannot use", () => {
-    it("never returns a row a caller cannot look up", () => {
-      // A record without an id or a name cannot be cited or fetched again.
-      // Dropping it and failing loudly are both defensible; handing back a row
-      // whose id is NaN, or whose link says "undefined", is not.
-      let rows: TitleSummary[];
-      try {
-        rows = parseTitleList(missingAttrs, URL_SEARCH);
-      } catch (error) {
-        expectAnnError(() => {
-          throw error;
-        }, "parse_failure");
-        return;
-      }
+    it("drops a record it cannot address and keeps the rest", () => {
+      // A record without an id or a name cannot be cited or looked up again.
+      // Dropping it costs one row; handing back a row whose id is NaN, or whose
+      // link says "undefined", costs the caller a failed lookup with no
+      // explanation.
+      const rows: TitleSummary[] = parseTitleList(missingAttrs, URL_SEARCH);
 
+      expect(rows).toHaveLength(1);
       expect(rows.map((row) => row.name)).toContain("Placeholder Drifters of the Void 1");
       for (const row of rows) {
         expect(Number.isInteger(row.id), `id ${String(row.id)} is not an integer`).toBe(true);
@@ -109,12 +104,14 @@ describe("parseTitleList", () => {
   });
 
   describe("failures Anime News Network serves under HTTP 200", () => {
-    // Every response is HTTP 200, including the failures. A warning read as an
-    // empty list would tell a model the series does not exist.
+    // Every response is HTTP 200, including the failures, which arrive as a
+    // <warning> element. What a warning means depends on what was asked: a
+    // search that matched nothing is a legitimate empty answer, and reporting
+    // it as an error would send the model back to the tool that just failed.
 
-    it("reports a no-result warning as not_found", () => {
-      const error = expectAnnError(() => parseTitleList(noResult, URL_SEARCH), "not_found");
-      expect(error.details.url).toBe(URL_SEARCH);
+    it("returns an empty list when a search matched nothing", () => {
+      expect(parseTitleList(noSearchResults, URL_SEARCH)).toEqual([]);
+      expect(parseTitleList(noResult, URL_SEARCH)).toEqual([]);
     });
 
     it("reports any other warning as invalid_input", () => {
@@ -267,11 +264,17 @@ describe("parseTitleDetail", () => {
 
   describe("failures Anime News Network serves under HTTP 200", () => {
     it("reports a no-result warning as not_found", () => {
+      // The same warning a search treats as an empty answer is an error here:
+      // the caller named one entry, and it does not exist.
       const error = expectAnnError(
         () => parseTitleDetail(noResult, URL_DETAIL, "anime id 99999999"),
         "not_found",
       );
       expect(error.message).not.toBe("");
+      expectAnnError(
+        () => parseTitleDetail(noSearchResults, URL_DETAIL, "anime id 99999999"),
+        "not_found",
+      );
     });
 
     it("reports any other warning as invalid_input", () => {

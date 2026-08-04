@@ -176,6 +176,13 @@ export async function runGetTitle(client: AnnClient, args: GetTitleArgs): Promis
         `The plot summary is longer than ${args.max_chars} characters. Call again with offset=${nextOffset} for the rest.`,
       );
     }
+    // Silence here would look like "this entry has no summary", when the real
+    // answer is that the offset asked for is past the end of one that exists.
+    if (slice === "" && args.offset > 0 && fullSummary.length > 0) {
+      notes.push(
+        `offset=${args.offset} is past the end of a plot summary of ${fullSummary.length} characters. Call again with offset=0 to read it from the start.`,
+      );
+    }
 
     const structured: Record<string, unknown> = {
       title: toTitleSummaryOut(data),

@@ -67,6 +67,14 @@ describe.runIf(enabled)("live Anime News Network", () => {
     ).toBeLessThan(5_000);
   }, 120_000);
 
+  it("still answers a search that matches nothing with an empty list", async () => {
+    // The site reports an empty search with the same <warning> element it uses
+    // for a failed lookup. Reading that as an error sent the model back to
+    // search_titles, the tool that had just answered it.
+    const search = await client.searchTitles("zzqqxx no such title zzqqxx");
+    expect(search.data, "an empty search is no longer a plain empty result").toEqual([]);
+  }, 120_000);
+
   it("still returns every section a title record is read from", async () => {
     // Cowboy Bebop, the record every shape in the parser was written against.
     const title = await client.getTitle("anime", 13);
@@ -110,12 +118,17 @@ describe.runIf(enabled)("live Anime News Network", () => {
   }, 120_000);
 
   it("still returns readable rows from the recently added report", async () => {
-    const rows = await client.listRecent("anime", 5, 0);
+    const page = await client.listRecent("anime", 5, 0);
 
-    expect(rows.data.length, "reports.xml returned no <item>: the report id may have moved").toBe(
-      5,
-    );
-    const first = rows.data[0]!;
+    expect(
+      page.data.itemCount,
+      "reports.xml returned no <item>: the report id may have moved",
+    ).toBe(5);
+    expect(
+      page.data.rows.length,
+      `${page.data.itemCount - page.data.rows.length} of 5 entries could not be read: the item shape may have changed`,
+    ).toBe(5);
+    const first = page.data.rows[0]!;
     expect(first.name, "the linking element carries no text").not.toBe("");
     expect(first.id, "no id could be read from the href").not.toBeNull();
     expect(first.kind, "the linking element name is no longer the kind").toBe("anime");
@@ -126,10 +139,14 @@ describe.runIf(enabled)("live Anime News Network", () => {
   }, 120_000);
 
   it("still returns readable rows from the alphabetical title report", async () => {
-    const rows = await client.browseTitles({ limit: 5, offset: 0, type: "anime", startsWith: "Z" });
+    const page = await client.browseTitles({ limit: 5, offset: 0, type: "anime", startsWith: "Z" });
 
-    expect(rows.data.length, "report 155 returned no <item>").toBeGreaterThan(0);
-    const first = rows.data[0]!;
+    expect(page.data.itemCount, "report 155 returned no <item>").toBeGreaterThan(0);
+    expect(
+      page.data.rows.length,
+      "no item in report 155 could be read: its shape may have changed",
+    ).toBe(page.data.itemCount);
+    const first = page.data.rows[0]!;
     expect(first.name, "the <name> element may have been renamed").not.toBe("");
     expect(first.id, "the <id> element may have been renamed").not.toBeNull();
     expect(
