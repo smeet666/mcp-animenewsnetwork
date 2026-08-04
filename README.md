@@ -39,6 +39,14 @@ claude mcp add animenewsnetwork -- npx -y mcp-animenewsnetwork
 }
 ```
 
+**Bundle, without npm**
+
+Download `mcp-animenewsnetwork-<version>.mcpb` from
+[the latest release](https://github.com/smeet666/mcp-animenewsnetwork/releases/latest) and open
+it. A client that supports MCP bundles installs it on its own, with no npm and
+no configuration file to edit. The bundle carries its dependencies, so nothing
+is fetched at install time.
+
 ## Tools
 
 | Tool            | What it does                                              | Key parameters                                  |
@@ -66,6 +74,14 @@ long-running series reaches 79 KB: Cowboy Bebop alone carries 101 cast credits,
 70 staff credits, 54 releases and 207 linked news items. `get_title` returns
 `basic` by default, and `cast`, `staff`, `episodes`, `releases`, `related`,
 `news` and `reviews` only when you ask.
+
+**A trimmed cast keeps every language.** Credits arrive ordered alphabetically
+by language, so taking the first sixty answers "who voices this character" with
+whichever dub sorts first and can miss the Japanese cast entirely. Each language
+keeps a share of the budget instead, and `cast_languages` reports the full count
+per language, so a trimmed list still shows what exists. A `lang` of `null`
+means the site recorded none, and says nothing about whether a credit is the
+original.
 
 **Search matches titles, and nothing else.** It cannot find a series from a
 character, a studio, a genre or a plot detail. There is no full-text search
@@ -216,6 +232,14 @@ claude mcp add animenewsnetwork -- npx -y mcp-animenewsnetwork
 }
 ```
 
+**Bundle, sans npm**
+
+Téléchargez `mcp-animenewsnetwork-<version>.mcpb` depuis
+[la dernière release](https://github.com/smeet666/mcp-animenewsnetwork/releases/latest) et
+ouvrez-le. Un client compatible avec les bundles MCP l'installe seul, sans npm
+ni fichier de configuration à modifier. Le bundle embarque ses dépendances,
+donc rien n'est téléchargé à l'installation.
+
 ## Outils
 
 | Outil           | Rôle                                                                     | Paramètres principaux                           |
@@ -243,6 +267,15 @@ long cours atteint 79 Ko : Cowboy Bebop porte à elle seule 101 rôles, 70 poste
 d'équipe, 54 éditions et 207 actualités liées. `get_title` renvoie `basic` par
 défaut, et `cast`, `staff`, `episodes`, `releases`, `related`, `news` et
 `reviews` seulement sur demande.
+
+**Une distribution tronquée garde toutes les langues.** Les crédits arrivent
+triés alphabétiquement par langue, donc prendre les soixante premiers répond
+« qui double ce personnage » avec le doublage qui passe en tête et peut manquer
+entièrement la distribution japonaise. Chaque langue conserve une part
+du budget, et `cast_languages` donne le compte réel par langue, pour qu'une
+liste tronquée montre quand même ce qui existe. Un `lang` à `null` signifie que
+le site n'en a pas enregistré, et ne dit rien sur le caractère original du
+crédit.
 
 **La recherche porte sur les titres, et rien d'autre.** Elle ne sait pas
 retrouver une série depuis un personnage, un studio, un genre ou un élément
