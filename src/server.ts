@@ -7,6 +7,7 @@
  */
 
 import { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
+import { z } from "zod";
 import { AnnClient } from "./ann/client.js";
 import type { Config, Logger } from "./config.js";
 import { createLogger, loadConfig } from "./config.js";
@@ -83,8 +84,8 @@ export function createServer(options: CreateServerOptions = {}): McpServer {
     {
       title: "Search the encyclopedia",
       description: searchTitlesDescription,
-      inputSchema: searchTitlesInputShape,
-      outputSchema: searchTitlesOutputShape,
+      inputSchema: z.object(searchTitlesInputShape),
+      outputSchema: z.object(searchTitlesOutputShape),
       annotations: READ_ONLY,
     },
     async (args) => runSearchTitles(client, args as SearchTitlesArgs),
@@ -95,8 +96,8 @@ export function createServer(options: CreateServerOptions = {}): McpServer {
     {
       title: "Read an encyclopedia entry",
       description: getTitleDescription,
-      inputSchema: getTitleInputShape,
-      outputSchema: getTitleOutputShape,
+      inputSchema: z.object(getTitleInputShape),
+      outputSchema: z.object(getTitleOutputShape),
       annotations: READ_ONLY,
     },
     async (args) => runGetTitle(client, args as GetTitleArgs),
@@ -107,8 +108,8 @@ export function createServer(options: CreateServerOptions = {}): McpServer {
     {
       title: "List recent or browse alphabetically",
       description: listRecentDescription,
-      inputSchema: listRecentInputShape,
-      outputSchema: listRecentOutputShape,
+      inputSchema: z.object(listRecentInputShape),
+      outputSchema: z.object(listRecentOutputShape),
       annotations: READ_ONLY,
     },
     async (args) => runListRecent(client, args as ListRecentArgs),
@@ -119,8 +120,8 @@ export function createServer(options: CreateServerOptions = {}): McpServer {
     {
       title: "Read the news wire",
       description: getNewsDescription,
-      inputSchema: getNewsInputShape,
-      outputSchema: getNewsOutputShape,
+      inputSchema: z.object(getNewsInputShape),
+      outputSchema: z.object(getNewsOutputShape),
       annotations: READ_ONLY,
     },
     async (args) => runGetNews(client, args as GetNewsArgs),
