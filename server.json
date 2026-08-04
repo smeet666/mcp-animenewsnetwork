@@ -1,0 +1,35 @@
+{
+  "$schema": "https://static.modelcontextprotocol.io/schemas/2025-12-11/server.schema.json",
+  "name": "io.github.smeet666/mcp-animenewsnetwork",
+  "description": "Search the Anime News Network encyclopedia and read its news wire. No API key.",
+  "repository": {
+    "url": "https://github.com/smeet666/mcp-animenewsnetwork",
+    "source": "github"
+  },
+  "version": "1.0.0",
+  "packages": [
+    {
+      "registryType": "npm",
+      "identifier": "mcp-animenewsnetwork",
+      "version": "1.0.0",
+      "transport": { "type": "stdio" },
+      "environmentVariables": [
+        {
+          "name": "ANN_USER_AGENT",
+          "description": "Override the User-Agent sent to Anime News Network.",
+          "isRequired": false
+        },
+        {
+          "name": "ANN_MIN_INTERVAL_MS",
+          "description": "Minimum milliseconds between requests. Default 1100, floor 1000.",
+          "isRequired": false
+        },
+        {
+          "name": "ANN_LOG_LEVEL",
+          "description": "silent, error, info or debug. Default error.",
+          "isRequired": false
+        }
+      ]
+    }
+  ]
+}

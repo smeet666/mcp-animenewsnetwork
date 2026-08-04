@@ -1,0 +1,81 @@
+{
+  "name": "mcp-animenewsnetwork",
+  "version": "1.0.0",
+  "description": "MCP server for Anime News Network. Search the anime and manga encyclopedia, read cast, staff and episodes, and follow the news wire. No API key required.",
+  "type": "module",
+  "license": "MIT",
+  "author": "smeet666",
+  "homepage": "https://github.com/smeet666/mcp-animenewsnetwork#readme",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/smeet666/mcp-animenewsnetwork.git"
+  },
+  "bugs": {
+    "url": "https://github.com/smeet666/mcp-animenewsnetwork/issues"
+  },
+  "mcpName": "io.github.smeet666/mcp-animenewsnetwork",
+  "bin": {
+    "mcp-animenewsnetwork": "dist/index.js"
+  },
+  "main": "dist/index.js",
+  "types": "dist/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js"
+    },
+    "./client": {
+      "types": "./dist/ann/client.d.ts",
+      "import": "./dist/ann/client.js"
+    }
+  },
+  "files": [
+    "dist",
+    "README.md",
+    "LICENSE",
+    "server.json"
+  ],
+  "engines": {
+    "node": ">=20.18.1"
+  },
+  "scripts": {
+    "build": "tsup",
+    "typecheck": "tsc --noEmit",
+    "test": "vitest run test/unit",
+    "test:live": "vitest run test/live --testTimeout=60000",
+    "build:fixtures": "node scripts/build-fixtures.mjs",
+    "format": "prettier --write .",
+    "prepublishOnly": "npm run typecheck && npm run test && npm run build",
+    "start": "node dist/index.js",
+    "inspector": "npx @modelcontextprotocol/inspector node dist/index.js"
+  },
+  "keywords": [
+    "mcp",
+    "modelcontextprotocol",
+    "model-context-protocol",
+    "mcp-server",
+    "anime-news-network",
+    "animenewsnetwork",
+    "anime",
+    "manga",
+    "encyclopedia",
+    "news",
+    "claude",
+    "cursor",
+    "llm",
+    "ai",
+    "no-api-key"
+  ],
+  "dependencies": {
+    "@modelcontextprotocol/sdk": "^1.30.0",
+    "@rgrove/parse-xml": "^4.2.3",
+    "zod": "^3.25.76"
+  },
+  "devDependencies": {
+    "@types/node": "^22.10.2",
+    "prettier": "^3.4.2",
+    "tsup": "^8.5.1",
+    "typescript": "^5.7.2",
+    "vitest": "^2.1.8"
+  }
+}

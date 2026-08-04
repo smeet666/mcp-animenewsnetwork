@@ -1,0 +1,100 @@
+# Nightly canary against the real Anime News Network.
+#
+# The unit tests run against generated fixtures, so they cannot detect that
+# Anime News Network changed the XML this server reads: the day it does, they
+# stay green while the published server is broken for everyone. This job is the
+# only thing that notices, and it opens an issue when it fails.
+#
+# It is deliberately separate from CI: it depends on a third-party site, so a
+# failure here means "the site moved", never "this pull request is bad".
+
+name: Live canary
+
+on:
+  schedule:
+    # 03:18 UTC, offset from the sibling projects so they never run together.
+    - cron: "18 3 * * *"
+  workflow_dispatch:
+
+# A single run at a time, so a slow night cannot overlap with the next one.
+concurrency:
+  group: live-canary
+  cancel-in-progress: false
+
+jobs:
+  canary:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      # Needed to open the issue that reports a broken contract.
+      issues: write
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm ci
+      - name: Run the live canary
+        env:
+          ANN_LIVE: "1"
+          # Slower than the documented one request per second: a scheduled job
+          # has no user waiting, and the site delays rather than refusing.
+          ANN_MIN_INTERVAL_MS: "2500"
+          # Generous: a canary must fail on a changed contract, not on a slow night.
+          ANN_TIMEOUT_MS: "60000"
+          ANN_LOG_LEVEL: info
+        run: npm run test:live
+
+      - name: Report a broken canary
+        if: failure()
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const title = "Live canary failing: Anime News Network may have changed its XML";
+            const runUrl = `${context.serverUrl}/${context.repo.owner}/${context.repo.repo}/actions/runs/${context.runId}`;
+            const body = [
+              "The nightly live canary failed. Either Anime News Network changed the XML this server",
+              "reads, or it was unreachable from the runner.",
+              "",
+              `Run: ${runUrl}`,
+              "",
+              "The assertion messages name the element that moved. Every element and attribute name lives",
+              "in `src/ann/paths.ts`, so a rename is usually a one-file fix, followed by regenerating the",
+              "fixtures so the unit tests cover the new shape, and releasing a patch version.",
+              "",
+              "Two assertions deserve special attention.",
+              "",
+              "The first checks that a search for a very common term still returns a small payload. If only",
+              "that one fails, the trimming that this server exists to perform has stopped working, and",
+              "every search will quietly return megabytes of records.",
+              "",
+              "The second checks that an unknown id still raises an error. Anime News Network answers",
+              "failures with HTTP 200 and a <warning> element, so if that detection breaks, a missing entry",
+              "will be reported to users as 'this series does not exist'.",
+            ].join("\n");
+
+            // Reuse the open issue rather than filing one every night.
+            const existing = await github.rest.issues.listForRepo({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              state: "open",
+              labels: "live-canary",
+            });
+
+            if (existing.data.length > 0) {
+              await github.rest.issues.createComment({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                issue_number: existing.data[0].number,
+                body: `Still failing as of ${new Date().toISOString()}. ${runUrl}`,
+              });
+            } else {
+              await github.rest.issues.create({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                title,
+                body,
+                labels: ["live-canary"],
+              });
+            }

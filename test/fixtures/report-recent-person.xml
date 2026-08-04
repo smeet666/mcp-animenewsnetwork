@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<report skipped="0" listed="2">
+<item>
+    <person href="/encyclopedia/person.php?id=40401">Placeholder Added person 1 (TV 1)</person>
+    <date_added>2026-08-03 06:01:41</date_added>
+    <unknown-column>noise the parser must ignore</unknown-column>
+  </item>
+<item>
+    <person href="/encyclopedia/person.php?id=40402">Placeholder Added person 2 (TV 2)</person>
+    <date_added>2026-08-03 06:02:41</date_added>
+    <unknown-column>noise the parser must ignore</unknown-column>
+  </item>
+</report>

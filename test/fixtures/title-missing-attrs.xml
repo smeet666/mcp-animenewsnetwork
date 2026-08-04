@@ -1,0 +1,84 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<ann>
+<anime id="4241" gid="90000001" type="TV" name="Placeholder Drifters of the Void 1" precision="TV" generated-on="2026-08-03T20:27:14Z">
+  <related-next id="9001" rel="alternate retelling"/>
+  <related-prev id="9101" rel="spinoff of"/>
+  <unrecognised-element kind="noise" seq="1">nothing here matters</unrecognised-element>
+  <info gid="91" type="Unknown Future Field">a type no version of the parser knows</info>
+  <banner gid="81" src="https://example.invalid/banner-1.png"/>
+  <info gid="248" type="Picture" src="https://example.invalid/thumbnails/A4241.jpg" width="168" height="200"><img src="https://example.invalid/thumbnails/A4241.jpg" width="168" height="200"/></info>
+  <info gid="368" type="Main title" lang="EN">Placeholder Drifters of the Void 1</info>
+  <info gid="371" type="Alternative title" lang="JA">プレースホルダー 1</info>
+  <info gid="440" type="Genres">action</info>
+  <info gid="441" type="Genres">adventure</info>
+  <info gid="350" type="Themes">space</info>
+  <info gid="351" type="Themes">jazz</info>
+  <info gid="1" type="Vintage">1998-04-03</info>
+  <info gid="2" type="Number of episodes">26</info>
+  <info gid="3" type="Running time">24</info>
+  <info gid="4" type="Plot Summary">Plot summary fixture sentence one, describing a crew that drifts between stations.
+
+A second placeholder paragraph, long enough that pagination has something to cut.
+
+A third placeholder paragraph, closing the invented synopsis.</info>
+  <info gid="6" type="Official website">https://example.invalid/drifters-1</info>
+  <info gid="7" type="Objectionable content">Mild</info>
+  <info gid="8" type="Opening Theme">"Placeholder Opening Song 1"</info>
+  <info gid="9" type="Ending Theme">"Placeholder Ending Song 1"</info>
+  
+</anime>
+<anime gid="90000006" type="TV" precision="TV" generated-on="2026-08-03T20:27:14Z">
+  <related-next id="9006" rel="alternate retelling"/>
+  <related-prev id="9106" rel="spinoff of"/>
+  <unrecognised-element kind="noise" seq="6">nothing here matters</unrecognised-element>
+  <info gid="96" type="Unknown Future Field">a type no version of the parser knows</info>
+  <banner gid="86" src="https://example.invalid/banner-6.png"/>
+  <info gid="248" type="Picture" src="https://example.invalid/thumbnails/A4246.jpg" width="168" height="200"><img src="https://example.invalid/thumbnails/A4246.jpg" width="168" height="200"/></info>
+  <info gid="368" type="Main title" lang="EN">Placeholder Drifters of the Void 6</info>
+  <info gid="371" type="Alternative title" lang="JA">プレースホルダー 6</info>
+  <info gid="440" type="Genres">action</info>
+  <info gid="441" type="Genres">adventure</info>
+  <info gid="350" type="Themes">space</info>
+  <info gid="351" type="Themes">jazz</info>
+  <info gid="1" type="Vintage">1998-04-03</info>
+  <info gid="2" type="Number of episodes">26</info>
+  <info gid="3" type="Running time">24</info>
+  <info gid="4" type="Plot Summary">Plot summary fixture sentence one, describing a crew that drifts between stations.
+
+A second placeholder paragraph, long enough that pagination has something to cut.
+
+A third placeholder paragraph, closing the invented synopsis.</info>
+  <info gid="6" type="Official website">https://example.invalid/drifters-6</info>
+  <info gid="7" type="Objectionable content">Mild</info>
+  <info gid="8" type="Opening Theme">"Placeholder Opening Song 6"</info>
+  <info gid="9" type="Ending Theme">"Placeholder Ending Song 6"</info>
+  
+</anime>
+<manga gid="90000007" type="TV" precision="TV" generated-on="2026-08-03T20:27:14Z">
+  <related-next id="9007" rel="alternate retelling"/>
+  <related-prev id="9107" rel="spinoff of"/>
+  <unrecognised-element kind="noise" seq="7">nothing here matters</unrecognised-element>
+  <info gid="97" type="Unknown Future Field">a type no version of the parser knows</info>
+  <banner gid="87" src="https://example.invalid/banner-7.png"/>
+  <info gid="248" type="Picture" src="https://example.invalid/thumbnails/A4247.jpg" width="168" height="200"><img src="https://example.invalid/thumbnails/A4247.jpg" width="168" height="200"/></info>
+  <info gid="368" type="Main title" lang="EN">Placeholder Drifters of the Void 7</info>
+  <info gid="371" type="Alternative title" lang="JA">プレースホルダー 7</info>
+  <info gid="440" type="Genres">action</info>
+  <info gid="441" type="Genres">adventure</info>
+  <info gid="350" type="Themes">space</info>
+  <info gid="351" type="Themes">jazz</info>
+  <info gid="1" type="Vintage">1998-04-03</info>
+  <info gid="2" type="Number of episodes">26</info>
+  <info gid="3" type="Running time">24</info>
+  <info gid="4" type="Plot Summary">Plot summary fixture sentence one, describing a crew that drifts between stations.
+
+A second placeholder paragraph, long enough that pagination has something to cut.
+
+A third placeholder paragraph, closing the invented synopsis.</info>
+  <info gid="6" type="Official website">https://example.invalid/drifters-7</info>
+  <info gid="7" type="Objectionable content">Mild</info>
+  <info gid="8" type="Opening Theme">"Placeholder Opening Song 7"</info>
+  <info gid="9" type="Ending Theme">"Placeholder Ending Song 7"</info>
+  
+</manga>
+</ann>

@@ -1,0 +1,48 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<report skipped="0" listed="5">
+<item>
+    <id>40401</id>
+    <gid>3831096001</gid>
+    <type>TV</type>
+    <name>Placeholder Listed Title 1</name>
+    <precision>TV 1</precision>
+    <vintage>2026-08-01</vintage>
+    <unknown-column>noise the parser must ignore</unknown-column>
+  </item>
+<item>
+    <id>40402</id>
+    <gid>3831096002</gid>
+    <type>manga</type>
+    <name>Placeholder Listed Title 2</name>
+    <precision>manga</precision>
+    <vintage>2026-08-02</vintage>
+    <unknown-column>noise the parser must ignore</unknown-column>
+  </item>
+<item>
+    <id>40403</id>
+    <gid>3831096003</gid>
+    <type>TV</type>
+    <name>Placeholder Listed Title 3</name>
+    <precision>TV 3</precision>
+    <vintage>2026-08-03</vintage>
+    <unknown-column>noise the parser must ignore</unknown-column>
+  </item>
+<item>
+    <id>40404</id>
+    <gid>3831096004</gid>
+    <type>manga</type>
+    <name>Placeholder Listed Title 4</name>
+    <precision>manga</precision>
+    <vintage>2026-08-04</vintage>
+    <unknown-column>noise the parser must ignore</unknown-column>
+  </item>
+<item>
+    <id>40405</id>
+    <gid>3831096005</gid>
+    <type>TV</type>
+    <name>Placeholder Listed Title 5</name>
+    <precision>TV 5</precision>
+    <vintage>2026-08-05</vintage>
+    <unknown-column>noise the parser must ignore</unknown-column>
+  </item>
+</report>
