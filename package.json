@@ -13,6 +13,10 @@
   "bugs": {
     "url": "https://github.com/smeet666/mcp-animenewsnetwork/issues"
   },
+  "funding": {
+    "type": "buymeacoffee",
+    "url": "https://buymeacoffee.com/smeet666"
+  },
   "mcpName": "io.github.smeet666/mcp-animenewsnetwork",
   "bin": {
     "mcp-animenewsnetwork": "dist/index.js"
