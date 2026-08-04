@@ -8,14 +8,7 @@
 import { z } from "zod";
 import type { AnnClient } from "../ann/client.js";
 import type { Edition, FeedName } from "../ann/urls.js";
-import {
-  ATTRIBUTION,
-  newsItemSchema,
-  ok,
-  toNewsItemOut,
-  toToolError,
-  type ToolResult,
-} from "./shared.js";
+import { newsItemSchema, ok, toNewsItemOut, toToolError, type ToolResult } from "./shared.js";
 
 export const getNewsDescription = [
   "Read the latest Anime News Network stories from their RSS feeds.",
@@ -98,7 +91,7 @@ export async function runGetNews(client: AnnClient, args: GetNewsArgs): Promise<
     const summary =
       items.length === 0
         ? "No story matched."
-        : `${items.length} stories from the ${args.feed} feed (${args.edition}):\n${listing}\n\n${ATTRIBUTION}`;
+        : `${items.length} stories from the ${args.feed} feed (${args.edition}):\n${listing}`;
 
     return ok(
       {

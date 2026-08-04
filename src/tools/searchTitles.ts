@@ -4,7 +4,6 @@ import { z } from "zod";
 import type { AnnClient } from "../ann/client.js";
 import type { TitleKind } from "../types.js";
 import {
-  ATTRIBUTION,
   ok,
   renderTitleList,
   titleSummarySchema,
@@ -75,7 +74,7 @@ export async function runSearchTitles(
     const summary =
       results.length === 0
         ? `No encyclopedia entry matched "${args.query}".`
-        : `${results.length} entr${results.length === 1 ? "y" : "ies"} for "${args.query}":\n${renderTitleList(results)}\n\n${ATTRIBUTION}`;
+        : `${results.length} entr${results.length === 1 ? "y" : "ies"} for "${args.query}":\n${renderTitleList(results)}`;
 
     return ok({ query: args.query, results, total_available: filtered.length, notes }, summary);
   } catch (error) {

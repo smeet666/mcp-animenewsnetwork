@@ -6,8 +6,10 @@
  * body and leaves that judgement to the parsers, which read the <warning>
  * element the site uses to report failures.
  *
- * The one status worth acting on is 503, which is what the nodelay variant of
- * the API returns when a caller goes over one request per second.
+ * Statuses are still read where they carry meaning: 503 is what the site returns
+ * when a caller goes over one request per second, and 403 is how an edge blocks
+ * a client it dislikes. Both are refusals to back off from rather than errors to
+ * report, and `Retry-After` is honoured when the site sends one.
  */
 
 import type { Config, Logger } from "../config.js";
@@ -46,15 +48,22 @@ export async function fetchText(url: string, deps: HttpDeps): Promise<string> {
   return limiter.schedule(async () => {
     let lastError: AnnError | undefined;
 
+    // Set when the site says how long to stay away; it replaces our own guess
+    // for the next attempt. Applied here rather than where it is read, so no
+    // wait is ever served after the last attempt, when nobody would use it.
+    let askedWaitMs: number | null = null;
+
     for (let attempt = 0; attempt <= config.maxRetries; attempt += 1) {
       if (attempt > 0) {
-        const delay = backoffDelay(attempt - 1);
+        const delay = Math.min(askedWaitMs ?? backoffDelay(attempt - 1), BACKOFF_MAX_MS);
+        askedWaitMs = null;
         logger.info(`retry ${attempt}/${config.maxRetries} in ${delay}ms for ${url}`);
         await sleep(delay);
       }
 
       let status: number;
       let body: string;
+      let retryAfterMs: number | null = null;
       try {
         await limiter.beforeRequest();
         const response = await doFetch(url, {
@@ -66,6 +75,7 @@ export async function fetchText(url: string, deps: HttpDeps): Promise<string> {
           signal: AbortSignal.timeout(config.timeoutMs),
         });
         status = response.status;
+        retryAfterMs = parseRetryAfter(response.headers.get("retry-after"));
         body = await response.text();
       } catch (error) {
         lastError = asTransportError(error, url);
@@ -73,10 +83,14 @@ export async function fetchText(url: string, deps: HttpDeps): Promise<string> {
         continue;
       }
 
-      if (status === 429 || status === 503) {
+      if (status === 429 || status === 503 || status === 403) {
         limiter.penalize();
-        lastError = rateLimited(url, backoffDelay(attempt));
-        logger.info(`rate limited on ${url}, interval now ${limiter.currentIntervalMs}ms`);
+        // A server that says when to come back knows better than our own guess.
+        askedWaitMs = retryAfterMs;
+        lastError = rateLimited(url, retryAfterMs ?? backoffDelay(attempt));
+        logger.info(
+          `refused on ${url} with ${status}, interval now ${limiter.currentIntervalMs}ms`,
+        );
         continue;
       }
       if (status >= 500) {
@@ -101,6 +115,16 @@ export async function fetchText(url: string, deps: HttpDeps): Promise<string> {
 
     throw lastError ?? new AnnError("network_error", `Could not fetch ${url}.`, { url });
   });
+}
+
+/** `Retry-After` carries either seconds or an HTTP date. */
+function parseRetryAfter(raw: string | null): number | null {
+  if (!raw) return null;
+  const seconds = Number(raw.trim());
+  if (Number.isFinite(seconds) && seconds >= 0) return Math.round(seconds * 1000);
+  const when = Date.parse(raw);
+  if (Number.isNaN(when)) return null;
+  return Math.max(0, when - Date.now());
 }
 
 function asTransportError(error: unknown, url: string): AnnError {

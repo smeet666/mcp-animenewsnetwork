@@ -248,7 +248,7 @@ export async function runGetTitle(client: AnnClient, args: GetTitleArgs): Promis
       structured.reviews = capped(data.reviews, CAPS.reviews, "linked reviews", notes);
     }
 
-    return ok(structured, renderSummary(data, slice, wanted));
+    return ok(structured, renderSummary(data, slice, wanted), `${ATTRIBUTION} — ${data.sourceUrl}`);
   } catch (error) {
     return toToolError(error);
   }
@@ -283,6 +283,5 @@ function renderSummary(data: TitleDetail, plot: string, wanted: Set<string>): st
   );
   if (extras.length > 0) lines.push("", `Also returned: ${extras.join(", ")}.`);
 
-  lines.push("", `${ATTRIBUTION} — ${data.sourceUrl}`);
   return lines.join("\n");
 }

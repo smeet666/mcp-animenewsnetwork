@@ -1,6 +1,6 @@
 {
   "name": "mcp-animenewsnetwork",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "description": "MCP server for Anime News Network. Search the anime and manga encyclopedia, read cast, staff and episodes, and follow the news wire. No API key required.",
   "type": "module",
   "license": "MIT",

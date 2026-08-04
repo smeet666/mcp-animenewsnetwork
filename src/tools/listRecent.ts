@@ -9,14 +9,7 @@
 import { z } from "zod";
 import type { AnnClient, RecentKind } from "../ann/client.js";
 import { invalidInput } from "../errors.js";
-import {
-  ATTRIBUTION,
-  ok,
-  reportRowSchema,
-  toReportRowOut,
-  toToolError,
-  type ToolResult,
-} from "./shared.js";
+import { ok, reportRowSchema, toReportRowOut, toToolError, type ToolResult } from "./shared.js";
 
 export const listRecentDescription = [
   "List what was added to the Anime News Network encyclopedia most recently: anime, manga, people or companies.",
@@ -116,7 +109,7 @@ export async function runListRecent(client: AnnClient, args: ListRecentArgs): Pr
     const summary =
       rows.length === 0
         ? `No rows for ${heading}.`
-        : `${rows.length} rows, ${heading}:\n${listing}\n\n${ATTRIBUTION}`;
+        : `${rows.length} rows, ${heading}:\n${listing}`;
 
     return ok(
       {

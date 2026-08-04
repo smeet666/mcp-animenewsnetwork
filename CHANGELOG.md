@@ -1,5 +1,27 @@
 # Changelog
 
+## 1.0.1
+
+- Keep the source credit on the text block when it has to be shortened. The
+  block was assembled with the credit last and then truncated to fit, so any
+  answer over the budget lost exactly that line: a search for "gundam" returns
+  26 rows and 2014 characters against a 2000 budget, so it fired on an ordinary
+  query. The body is now trimmed around the credit, and says when it was
+  shortened, which a client rendering only text had no other way to know.
+- Honour `Retry-After` when the site sends one, in both its seconds and its
+  HTTP-date form, instead of guessing a delay. The wait is spent between
+  attempts rather than after the last one, where nobody would use it.
+- Treat HTTP 403 as a refusal to back off from, like 429 and 503. It was
+  reported as a plain error, so the client kept its pace in the one situation
+  where slowing down is the remedy.
+- Bound the pacing wait by the interval. A clock stepped backwards, by NTP or a
+  resumed virtual machine, made the next request wait for the size of the step,
+  and the queue is serial so every pending call waited behind it.
+- Enforce the pacing floor and the identifying User-Agent in the client rather
+  than only when reading the environment. `AnnClient` is published through the
+  `./client` export and accepts a caller-built config, so both promises made to
+  Anime News Network were previously optional for anyone importing the library.
+
 ## 1.0.0
 
 First stable release. The tool contracts are settled: tool names, argument names
