@@ -63,9 +63,9 @@ describe("AnnClient caching", () => {
   });
 
   it("does not cache a response it could not read", async () => {
-    // A garbage response used to be pinned for the whole cache lifetime and
-    // replayed at every retry, so the tool could not recover even once the site
-    // was healthy again.
+    // Caching a response that could not be read pins it for the whole cache
+    // lifetime and replays it at every retry, so the tool cannot recover even
+    // once the site is healthy.
     const bodies = [fixtureText("html-page.html"), fixtureText("search-results.xml")];
     let call = 0;
     const impl = (async () => xmlResponse(bodies[Math.min(call++, 1)] as string)) as typeof fetch;

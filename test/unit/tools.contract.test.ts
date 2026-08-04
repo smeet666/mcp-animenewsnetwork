@@ -194,8 +194,9 @@ describe("list_recent", () => {
   });
 
   it("pages by what the site sent, not by what could be read", async () => {
-    // One unreadable entry used to shorten the page, which read as the end of
-    // the catalogue and, when it was not, shifted every later page by one.
+    // Paging by what could be read shortens the page on one unreadable entry,
+    // which reads as the end of the catalogue and, when it is not, shifts every
+    // later page by one.
     const client = await connect(
       fixtureRouter({ "reports.xml?id=148": "report-partial.xml" }).impl,
     );

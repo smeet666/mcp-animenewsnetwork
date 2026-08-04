@@ -371,8 +371,8 @@ function renderSummary(
   }
   if (plot) lines.push("", plot);
 
-  // Announcing a section without printing it left a text-only client with the
-  // promise and none of the content it paid a request for.
+  // A section is printed, not announced: a text-only client that reads the
+  // promise alone has paid a request for nothing.
   const cast = (structured.cast ?? []) as Array<{
     role: string;
     person: string;
