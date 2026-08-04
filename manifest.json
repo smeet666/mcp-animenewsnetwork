@@ -1,0 +1,65 @@
+{
+  "manifest_version": "0.3",
+  "name": "mcp-animenewsnetwork",
+  "display_name": "Anime News Network",
+  "version": "1.2.0",
+  "description": "MCP server for Anime News Network. Search the anime and manga encyclopedia, read cast, staff and episodes, and follow the news wire. No API key required.",
+  "long_description": "Search the anime and manga encyclopedia, read cast, staff and episodes, and follow the news wire. No API key, no account.",
+  "author": {
+    "name": "Damien Bouissou",
+    "url": "https://github.com/smeet666"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/smeet666/mcp-animenewsnetwork.git"
+  },
+  "homepage": "https://github.com/smeet666/mcp-animenewsnetwork#readme",
+  "documentation": "https://github.com/smeet666/mcp-animenewsnetwork#readme",
+  "support": "https://github.com/smeet666/mcp-animenewsnetwork/issues",
+  "icon": "assets/icon-512.png",
+  "license": "MIT",
+  "keywords": [
+    "mcp",
+    "modelcontextprotocol",
+    "model-context-protocol",
+    "mcp-server",
+    "anime-news-network",
+    "animenewsnetwork",
+    "anime",
+    "manga",
+    "encyclopedia",
+    "news"
+  ],
+  "server": {
+    "type": "node",
+    "entry_point": "server/index.js",
+    "mcp_config": {
+      "command": "node",
+      "args": ["${__dirname}/server/index.js"]
+    }
+  },
+  "tools": [
+    {
+      "name": "search_titles",
+      "description": "Find an entry by title."
+    },
+    {
+      "name": "get_title",
+      "description": "Read one entry, section by section."
+    },
+    {
+      "name": "list_recent",
+      "description": "Browse recently added or alphabetical listings."
+    },
+    {
+      "name": "get_news",
+      "description": "Read the news wire."
+    }
+  ],
+  "compatibility": {
+    "platforms": ["darwin", "win32", "linux"],
+    "runtimes": {
+      "node": ">=20.0.0"
+    }
+  }
+}
