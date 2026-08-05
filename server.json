@@ -7,24 +7,28 @@
     {
       "src": "https://raw.githubusercontent.com/smeet666/mcp-animenewsnetwork/main/assets/icon-128.png",
       "mimeType": "image/png",
-      "sizes": ["128x128"]
+      "sizes": [
+        "128x128"
+      ]
     },
     {
       "src": "https://raw.githubusercontent.com/smeet666/mcp-animenewsnetwork/main/assets/icon-512.png",
       "mimeType": "image/png",
-      "sizes": ["512x512"]
+      "sizes": [
+        "512x512"
+      ]
     }
   ],
   "repository": {
     "url": "https://github.com/smeet666/mcp-animenewsnetwork",
     "source": "github"
   },
-  "version": "1.2.1",
+  "version": "1.2.2",
   "packages": [
     {
       "registryType": "npm",
       "identifier": "mcp-animenewsnetwork",
-      "version": "1.2.1",
+      "version": "1.2.2",
       "transport": {
         "type": "stdio"
       },
@@ -49,7 +53,7 @@
     {
       "registryType": "mcpb",
       "identifier": "https://github.com/smeet666/mcp-animenewsnetwork/releases/download/v1.2.1/mcp-animenewsnetwork-1.2.1.mcpb",
-      "version": "1.2.1",
+      "version": "1.2.2",
       "transport": {
         "type": "stdio"
       }

@@ -1,5 +1,12 @@
 # Changelog
 
+## 1.2.2
+
+- Number the episodes in the text block. The list read `undefined` in the
+  position where each number belongs, for every episode of every series, while
+  the structured payload carried the numbers correctly. Clients that show only
+  the text saw a hundred rows of a placeholder standing where data should be.
+
 ## 1.2.1
 
 - Stop published text from producing a line shaped like one this server writes.

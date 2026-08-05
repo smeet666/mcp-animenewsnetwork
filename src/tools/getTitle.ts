@@ -382,11 +382,11 @@ function renderSummary(
   lines.push(...renderPeople("Cast", cast));
   lines.push(...renderPeople("Staff", staff));
 
-  const episodes = (structured.episodes ?? []) as Array<{ number: string; title: string | null }>;
+  const episodes = (structured.episodes ?? []) as Array<{ num: string; title: string | null }>;
   if (episodes.length > 0) {
     lines.push("", "Episodes:");
     for (const episode of episodes)
-      lines.push(`  ${episode.number}. ${episode.title ?? ""}`.trimEnd());
+      lines.push(`  ${episode.num}. ${episode.title ?? ""}`.trimEnd());
   }
 
   for (const [section, label] of [
