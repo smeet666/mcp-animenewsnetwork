@@ -3,6 +3,7 @@
 [![npm](https://img.shields.io/npm/v/mcp-animenewsnetwork.svg)](https://www.npmjs.com/package/mcp-animenewsnetwork)
 [![CI](https://github.com/smeet666/mcp-animenewsnetwork/actions/workflows/ci.yml/badge.svg)](https://github.com/smeet666/mcp-animenewsnetwork/actions/workflows/ci.yml)
 [![license](https://img.shields.io/npm/l/mcp-animenewsnetwork.svg)](./LICENSE)
+[![Glama](https://glama.ai/mcp/servers/smeet666/mcp-animenewsnetwork/badges/score.svg)](https://glama.ai/mcp/servers/smeet666/mcp-animenewsnetwork)
 
 An [MCP](https://modelcontextprotocol.io) server for
 [Anime News Network](https://www.animenewsnetwork.com). Search the anime and manga
