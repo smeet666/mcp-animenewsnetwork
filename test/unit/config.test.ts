@@ -1,3 +1,4 @@
+import { readFileSync } from "node:fs";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import {
   DEFAULTS,
@@ -291,6 +292,17 @@ describe("loadConfig", () => {
 describe("DEFAULT_USER_AGENT", () => {
   it("identifies the client by name, version and url", () => {
     expect(DEFAULT_USER_AGENT).toBe(`mcp-animenewsnetwork v${PKG_VERSION} (${REPO_URL})`);
+  });
+
+  // The constant the code reads and the version a release publishes live in
+  // separate files, so one can be raised without the other. What the server
+  // then reports about itself, and what it tells Anime News Network in the
+  // User-Agent, is the number of some earlier build.
+  it("carries the version the package publishes", () => {
+    const manifest = JSON.parse(
+      readFileSync(new URL("../../package.json", import.meta.url), "utf8"),
+    ) as { version: string };
+    expect(PKG_VERSION).toBe(manifest.version);
   });
 });
 

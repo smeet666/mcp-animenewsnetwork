@@ -1,5 +1,14 @@
 # Changelog
 
+## 1.2.3
+
+- The server reported version 1.2.1 while the package said 1.2.2. The constant
+  the code reads sat outside the three files a release updates, so it kept the
+  number of the release before it. That constant is also what the `User-Agent`
+  carries, so Anime News Network was told which build was calling and told the
+  wrong one. The four now hold one version, and a test reads the constant
+  against `package.json` so they cannot part again.
+
 ## 1.2.2
 
 - Number the episodes in the text block. The list read `undefined` in the

@@ -2,7 +2,7 @@
   "manifest_version": "0.3",
   "name": "mcp-animenewsnetwork",
   "display_name": "Anime News Network",
-  "version": "1.2.2",
+  "version": "1.2.3",
   "description": "MCP server for Anime News Network. Search the anime and manga encyclopedia, read cast, staff and episodes, and follow the news wire. No API key required.",
   "long_description": "Search the anime and manga encyclopedia, read cast, staff and episodes, and follow the news wire. No API key, no account.",
   "author": {
@@ -35,9 +35,7 @@
     "entry_point": "server/index.js",
     "mcp_config": {
       "command": "node",
-      "args": [
-        "${__dirname}/server/index.js"
-      ]
+      "args": ["${__dirname}/server/index.js"]
     }
   },
   "tools": [
@@ -59,11 +57,7 @@
     }
   ],
   "compatibility": {
-    "platforms": [
-      "darwin",
-      "win32",
-      "linux"
-    ],
+    "platforms": ["darwin", "win32", "linux"],
     "runtimes": {
       "node": ">=20.0.0"
     }
