@@ -1,5 +1,12 @@
 # Changelog
 
+## 1.2.4
+
+- The README carries the same badge row as every server here: npm, CI, the
+  licence, the MCP registry entry, the Glama score, and one-click installs for
+  Cursor and VS Code. Each install link encodes this package. npm serves the
+  README frozen at publish time, so a release is what puts it there.
+
 ## 1.2.3
 
 - The server reported version 1.2.1 while the package said 1.2.2. The constant
