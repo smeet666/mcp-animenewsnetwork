@@ -5,7 +5,7 @@
 [![license](https://img.shields.io/npm/l/mcp-animenewsnetwork.svg)](./LICENSE)
 [![MCP Registry](https://img.shields.io/badge/MCP_Registry-listed-6E56CF)](https://registry.modelcontextprotocol.io/v0/servers?search=io.github.smeet666/mcp-animenewsnetwork)
 [![Glama](https://glama.ai/mcp/servers/smeet666/mcp-animenewsnetwork/badges/score.svg)](https://glama.ai/mcp/servers/smeet666/mcp-animenewsnetwork)
-[![M8ven Score](https://m8ven.ai/badge/mcp/smeet666-mcp-animenewsnetwork-tjuof8)](https://m8ven.ai/mcp/smeet666-mcp-animenewsnetwork-tjuof8)
+[![M8ven](https://m8ven.ai/badge/mcp/smeet666-mcp-animenewsnetwork-tjuof8?variant=verified)](https://m8ven.ai/mcp/smeet666-mcp-animenewsnetwork-tjuof8)
 <!-- m8ven-verify: 0bc9d48876faa24f4d509082ea05d5ba -->
 [![Install in Cursor](https://cursor.com/deeplink/mcp-install-dark.svg)](https://cursor.com/en/install-mcp?name=animenewsnetwork&config=eyJjb21tYW5kIjoibnB4IiwiYXJncyI6WyIteSIsIm1jcC1hbmltZW5ld3NuZXR3b3JrIl19)
 [![Install in VS Code](https://img.shields.io/badge/VS_Code-Install-0098FF?style=flat&logo=visualstudiocode&logoColor=white)](https://insiders.vscode.dev/redirect/mcp/install?name=animenewsnetwork&config=%7B%22name%22%3A%22animenewsnetwork%22%2C%22command%22%3A%22npx%22%2C%22args%22%3A%5B%22-y%22%2C%22mcp-animenewsnetwork%22%5D%7D)
