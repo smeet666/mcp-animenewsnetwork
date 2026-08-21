@@ -60,7 +60,9 @@ interface NumericRange {
 
 function readNumber(name: string, env: NodeJS.ProcessEnv, range: NumericRange): number {
   const raw = env[name];
-  if (raw === undefined || raw.trim() === "") return range.fallback;
+  if (raw === undefined || raw.trim() === "") {
+    return range.fallback;
+  }
 
   const parsed = Number(raw);
   if (!Number.isFinite(parsed)) {
@@ -96,7 +98,9 @@ function warn(message: string): void {
  */
 function readInterval(env: NodeJS.ProcessEnv): number {
   const raw = env.ANN_MIN_INTERVAL_MS;
-  if (raw === undefined || raw.trim() === "") return DEFAULTS.minIntervalMs;
+  if (raw === undefined || raw.trim() === "") {
+    return DEFAULTS.minIntervalMs;
+  }
 
   const parsed = Number(raw);
   if (!Number.isFinite(parsed)) {

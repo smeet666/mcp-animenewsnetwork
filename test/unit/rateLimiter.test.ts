@@ -41,7 +41,9 @@ describe("RateLimiter.schedule", () => {
       [1, 2, 3].map(() =>
         limiter.schedule(async () => {
           running += 1;
-          if (running > 1) overlapped = true;
+          if (running > 1) {
+            overlapped = true;
+          }
           await sleep(5);
           running -= 1;
         }),
@@ -135,7 +137,9 @@ describe("RateLimiter.beforeRequest", () => {
     const limiter = new RateLimiter({ minIntervalMs: 0 });
     const started = Date.now();
 
-    for (const _ of [1, 2, 3, 4, 5]) await limiter.beforeRequest();
+    for (const _ of [1, 2, 3, 4, 5]) {
+      await limiter.beforeRequest();
+    }
 
     expect(Date.now() - started).toBeLessThan(50);
   });
@@ -161,7 +165,9 @@ describe("RateLimiter.penalize and relax", () => {
 
   it("caps how far the interval can grow", () => {
     const limiter = new RateLimiter({ minIntervalMs: 100, maxIntervalMs: 500 });
-    for (const _ of [1, 2, 3, 4, 5, 6]) limiter.penalize();
+    for (const _ of [1, 2, 3, 4, 5, 6]) {
+      limiter.penalize();
+    }
     expect(limiter.currentIntervalMs).toBe(500);
   });
 
@@ -186,7 +192,9 @@ describe("RateLimiter.penalize and relax", () => {
     // client into going faster than that.
     const limiter = new RateLimiter({ minIntervalMs: 100 });
     limiter.penalize();
-    for (const _ of [1, 2, 3, 4, 5, 6, 7, 8, 9, 10]) limiter.relax();
+    for (const _ of [1, 2, 3, 4, 5, 6, 7, 8, 9, 10]) {
+      limiter.relax();
+    }
     expect(limiter.currentIntervalMs).toBe(100);
   });
 

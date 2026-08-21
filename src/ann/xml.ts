@@ -27,7 +27,9 @@ export function parseDocument(xml: string, url: string): XmlElement {
     throw parseFailure(url, first || "the body is not well-formed XML");
   }
 
-  if (!root) throw parseFailure(url, "the document has no root element");
+  if (!root) {
+    throw parseFailure(url, "the document has no root element");
+  }
   return root;
 }
 
@@ -47,15 +49,21 @@ export function isElement(node: unknown): node is XmlElement {
 export function children(parent: XmlElement, name?: string): XmlElement[] {
   const found: XmlElement[] = [];
   for (const node of parent.children) {
-    if (!isElement(node)) continue;
-    if (name === undefined || node.name === name) found.push(node);
+    if (!isElement(node)) {
+      continue;
+    }
+    if (name === undefined || node.name === name) {
+      found.push(node);
+    }
   }
   return found;
 }
 
 export function firstChild(parent: XmlElement, name: string): XmlElement | null {
   for (const node of parent.children) {
-    if (isElement(node) && node.name === name) return node;
+    if (isElement(node) && node.name === name) {
+      return node;
+    }
   }
   return null;
 }
@@ -63,28 +71,36 @@ export function firstChild(parent: XmlElement, name: string): XmlElement | null 
 /** An attribute, with empty strings normalised to null. */
 export function attr(element: XmlElement, name: string): string | null {
   const value = element.attributes[name];
-  if (typeof value !== "string") return null;
+  if (typeof value !== "string") {
+    return null;
+  }
   const trimmed = value.trim();
   return trimmed === "" ? null : trimmed;
 }
 
 export function intAttr(element: XmlElement, name: string): number | null {
   const raw = attr(element, name);
-  if (raw === null) return null;
+  if (raw === null) {
+    return null;
+  }
   const parsed = Number.parseInt(raw, 10);
   return Number.isFinite(parsed) ? parsed : null;
 }
 
 export function floatAttr(element: XmlElement, name: string): number | null {
   const raw = attr(element, name);
-  if (raw === null) return null;
+  if (raw === null) {
+    return null;
+  }
   const parsed = Number.parseFloat(raw);
   return Number.isFinite(parsed) ? parsed : null;
 }
 
 /** Text content of an element and its descendants, or null when blank. */
 export function textOf(element: XmlElement | null): string | null {
-  if (!element) return null;
+  if (!element) {
+    return null;
+  }
   const text = element.text.trim();
   return text === "" ? null : text;
 }

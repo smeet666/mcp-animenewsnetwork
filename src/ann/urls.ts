@@ -46,7 +46,9 @@ export function titleSearchUrl(query: string): string {
 
 export function recentReportUrl(reportId: number, limit: number, offset: number): string {
   const params = new URLSearchParams({ id: String(reportId), nlist: String(limit) });
-  if (offset > 0) params.set("nskip", String(offset));
+  if (offset > 0) {
+    params.set("nskip", String(offset));
+  }
   return `${API_BASE}/reports.xml?${params.toString()}`;
 }
 
@@ -60,9 +62,15 @@ export function titleListReportUrl(options: {
     id: String(TITLE_LIST_REPORT_ID),
     nlist: String(options.limit),
   });
-  if (options.offset > 0) params.set("nskip", String(options.offset));
-  if (options.type) params.set("type", options.type);
-  if (options.startsWith) params.set("name", options.startsWith);
+  if (options.offset > 0) {
+    params.set("nskip", String(options.offset));
+  }
+  if (options.type) {
+    params.set("type", options.type);
+  }
+  if (options.startsWith) {
+    params.set("name", options.startsWith);
+  }
   return `${API_BASE}/reports.xml?${params.toString()}`;
 }
 
@@ -85,6 +93,8 @@ export function titlePageUrl(kind: TitleKind, id: number): string {
 
 /** Report rows carry site-relative hrefs, which are useless to a reader as-is. */
 export function absoluteSiteUrl(href: string): string {
-  if (/^https?:\/\//i.test(href)) return href;
+  if (/^https?:\/\//i.test(href)) {
+    return href;
+  }
   return `${SITE_BASE}${href.startsWith("/") ? "" : "/"}${href}`;
 }

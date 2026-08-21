@@ -76,8 +76,12 @@ export async function runListRecent(client: AnnClient, args: ListRecentArgs): Pr
 
     const rows = data.rows.map(toReportRowOut);
     const notes: string[] = [];
-    if (cached) notes.push("Served from this server's short-lived in-memory cache.");
-    if (rows.length === 0) notes.push("The report returned no rows at this offset.");
+    if (cached) {
+      notes.push("Served from this server's short-lived in-memory cache.");
+    }
+    if (rows.length === 0) {
+      notes.push("The report returned no rows at this offset.");
+    }
     if (data.itemCount > data.rows.length) {
       notes.push(
         `${data.itemCount - data.rows.length} entries on this page could not be read and were skipped.`,
@@ -100,7 +104,7 @@ export async function runListRecent(client: AnnClient, args: ListRecentArgs): Pr
           row.precision ? `(${row.precision})` : "",
           row.vintage ? `· ${row.vintage}` : "",
           row.date_added ? `· added ${row.date_added}` : "",
-          row.id !== null ? `· id: ${row.id}` : "",
+          row.id === null ? "" : `· id: ${row.id}`,
         ];
         return parts.filter(Boolean).join(" ");
       })

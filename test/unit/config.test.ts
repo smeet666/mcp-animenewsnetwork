@@ -27,7 +27,9 @@ function captureStderr(): { lines: () => string; restore: () => void } {
     lines: () => chunks.join("\n"),
     restore: () => {
       writeSpy.mockRestore();
-      for (const spy of consoleSpies) spy.mockRestore();
+      for (const spy of consoleSpies) {
+        spy.mockRestore();
+      }
     },
   };
 }
@@ -52,8 +54,11 @@ describe("loadConfig", () => {
     try {
       expect(loadConfig({}).userAgent).toBe(DEFAULT_USER_AGENT);
     } finally {
-      if (previous === undefined) delete process.env.ANN_USER_AGENT;
-      else process.env.ANN_USER_AGENT = previous;
+      if (previous === undefined) {
+        delete process.env.ANN_USER_AGENT;
+      } else {
+        process.env.ANN_USER_AGENT = previous;
+      }
     }
   });
 
@@ -151,7 +156,7 @@ describe("loadConfig", () => {
     // reads as "never retry" and 0 cache entries as "no cache", both of which
     // look like working configuration. The default is the only safe reading.
 
-    const outOfRange: Array<[string, string, keyof ReturnType<typeof loadConfig>]> = [
+    const outOfRange: [string, string, keyof ReturnType<typeof loadConfig>][] = [
       ["ANN_TIMEOUT_MS", "-1", "timeoutMs"],
       ["ANN_TIMEOUT_MS", "0", "timeoutMs"],
       ["ANN_TIMEOUT_MS", "999999999", "timeoutMs"],

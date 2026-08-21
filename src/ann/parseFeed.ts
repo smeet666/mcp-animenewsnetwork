@@ -15,17 +15,23 @@ export function parseFeed(xml: string, url: string): NewsItem[] {
   const root = expectRoot(parseDocument(xml, url), FEED_EL.root, url);
 
   const channel = children(root, FEED_EL.channel)[0];
-  if (!channel) throw parseFailure(url, "the feed has no <channel>");
+  if (!channel) {
+    throw parseFailure(url, "the feed has no <channel>");
+  }
 
   const nodes = children(channel, FEED_EL.item);
-  if (nodes.length === 0) return [];
+  if (nodes.length === 0) {
+    return [];
+  }
 
   const items: NewsItem[] = [];
   for (const node of nodes) {
     const title = childText(node, FEED_EL.title);
     const link = childText(node, FEED_EL.link);
     // A headline with no link cannot be attributed, which the terms require.
-    if (!title || !link) continue;
+    if (!title || !link) {
+      continue;
+    }
 
     items.push({
       title,
@@ -51,7 +57,9 @@ export function parseFeed(xml: string, url: string): NewsItem[] {
  * tags in it. The words are the point; the italics are not.
  */
 function stripMarkup(text: string | null): string | null {
-  if (text === null) return null;
+  if (text === null) {
+    return null;
+  }
   const stripped = text
     .replace(/<[^>]*>/g, "")
     .replace(/\s+/g, " ")
@@ -66,7 +74,9 @@ function stripMarkup(text: string | null): string | null {
  * beats a null, and the feed is the only place this value comes from.
  */
 function toIsoDate(raw: string | null): string | null {
-  if (!raw) return null;
+  if (!raw) {
+    return null;
+  }
   const parsed = new Date(raw);
   return Number.isNaN(parsed.getTime()) ? raw : parsed.toISOString();
 }

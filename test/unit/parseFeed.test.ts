@@ -60,7 +60,9 @@ describe("parseFeed", () => {
 
     it("leaves no tag or collapsed whitespace in any summary", () => {
       for (const item of items) {
-        if (item.summary === null) continue;
+        if (item.summary === null) {
+          continue;
+        }
         expect(item.summary, `summary of "${item.title}"`).not.toMatch(/<[a-z/!]/i);
         expect(item.summary, `summary of "${item.title}"`).not.toMatch(/\s{2,}|\n/);
         expect(item.summary).toBe(item.summary.trim());

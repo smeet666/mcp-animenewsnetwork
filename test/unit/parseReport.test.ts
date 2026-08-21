@@ -41,7 +41,9 @@ describe("parseReport", () => {
     });
 
     it("carries no date added, which this report does not publish", () => {
-      for (const row of rows) expect(row.dateAdded).toBeNull();
+      for (const row of rows) {
+        expect(row.dateAdded).toBeNull();
+      }
     });
 
     it("builds a link from the id, since this shape carries no href", () => {
@@ -75,8 +77,12 @@ describe("parseReport", () => {
     });
 
     it("reads the kind from the linking element", () => {
-      for (const row of rows) expect(row.kind).toBe("anime");
-      for (const row of parseReport(recentPerson, URL_PEOPLE).rows) expect(row.kind).toBe("person");
+      for (const row of rows) {
+        expect(row.kind).toBe("anime");
+      }
+      for (const row of parseReport(recentPerson, URL_PEOPLE).rows) {
+        expect(row.kind).toBe("person");
+      }
     });
 
     it("keeps the name and the date it was added", () => {
