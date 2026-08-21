@@ -121,9 +121,10 @@ describe("fetchText", () => {
     it("recovers when a transient failure is followed by a success", async () => {
       pinBackoff();
       let call = 0;
-      const stub = makeFetch(() =>
-        (call += 1) === 1 ? new Response("busy", { status: 503 }) : xmlResponse(BODY),
-      );
+      const stub = makeFetch(() => {
+        call += 1;
+        return call === 1 ? new Response("busy", { status: 503 }) : xmlResponse(BODY);
+      });
 
       await expect(
         fetchText(URL, { ...deps({ maxRetries: 1 }), fetchImpl: stub.impl }),
@@ -138,9 +139,10 @@ describe("fetchText", () => {
       const limiter = new RateLimiter({ minIntervalMs: 0 });
       const claims = vi.spyOn(limiter, "beforeRequest");
       let call = 0;
-      const stub = makeFetch(() =>
-        (call += 1) === 1 ? new Response("busy", { status: 503 }) : xmlResponse(BODY),
-      );
+      const stub = makeFetch(() => {
+        call += 1;
+        return call === 1 ? new Response("busy", { status: 503 }) : xmlResponse(BODY);
+      });
 
       await fetchText(URL, { ...deps({ maxRetries: 1, limiter }), fetchImpl: stub.impl });
 

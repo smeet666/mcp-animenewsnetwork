@@ -7,7 +7,7 @@
  * makes it impossible for a search tool to pass those records on.
  */
 
-import { XmlElement } from "@rgrove/parse-xml";
+import type { XmlElement } from "@rgrove/parse-xml";
 import { invalidInput, notFound, parseFailure } from "../errors.js";
 import type {
   CastCredit,

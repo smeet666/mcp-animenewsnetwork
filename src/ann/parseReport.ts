@@ -11,7 +11,7 @@
  * skipped row: silently dropping every item would report an empty list.
  */
 
-import { XmlElement } from "@rgrove/parse-xml";
+import type { XmlElement } from "@rgrove/parse-xml";
 import { parseFailure } from "../errors.js";
 import type { ReportPage, ReportRow } from "../types.js";
 import { ATTR, REPORT_EL } from "./paths.js";
@@ -27,12 +27,10 @@ export function parseReport(xml: string, url: string): ReportPage {
   if (items.length === 0) return { rows: [], itemCount: 0 };
 
   const rows: ReportRow[] = [];
-  let unreadable = 0;
 
   for (const item of items) {
     const row = readLinkedItem(item) ?? readTitleItem(item);
     if (row) rows.push(row);
-    else unreadable += 1;
   }
 
   // Some rows failing is tolerable; all of them failing means the shape moved.
