@@ -24,13 +24,17 @@ type LinkKind = (typeof LINK_ELEMENTS)[number];
 export function parseReport(xml: string, url: string): ReportPage {
   const root = expectRoot(parseDocument(xml, url), REPORT_EL.root, url);
   const items = children(root, REPORT_EL.item);
-  if (items.length === 0) return { rows: [], itemCount: 0 };
+  if (items.length === 0) {
+    return { rows: [], itemCount: 0 };
+  }
 
   const rows: ReportRow[] = [];
 
   for (const item of items) {
     const row = readLinkedItem(item) ?? readTitleItem(item);
-    if (row) rows.push(row);
+    if (row) {
+      rows.push(row);
+    }
   }
 
   // Some rows failing is tolerable; all of them failing means the shape moved.
@@ -46,10 +50,14 @@ export function parseReport(xml: string, url: string): ReportPage {
 function readLinkedItem(item: XmlElement): ReportRow | null {
   for (const kind of LINK_ELEMENTS) {
     const node = firstNamed(item, kind);
-    if (!node) continue;
+    if (!node) {
+      continue;
+    }
 
     const name = textOf(node);
-    if (!name) return null;
+    if (!name) {
+      return null;
+    }
 
     const href = attr(node, ATTR.href);
     return {
@@ -69,7 +77,9 @@ function readLinkedItem(item: XmlElement): ReportRow | null {
 /** The id=155 shape: scalar children, with the kind carried by `type`. */
 function readTitleItem(item: XmlElement): ReportRow | null {
   const name = childText(item, REPORT_EL.name);
-  if (!name) return null;
+  if (!name) {
+    return null;
+  }
 
   const rawId = childText(item, REPORT_EL.id);
   const parsedId = rawId === null ? Number.NaN : Number.parseInt(rawId, 10);
@@ -97,9 +107,13 @@ function firstNamed(parent: XmlElement, name: LinkKind): XmlElement | null {
 }
 
 function idFromHref(href: string | null): number | null {
-  if (!href) return null;
+  if (!href) {
+    return null;
+  }
   const match = /[?&]id=(\d+)/.exec(href);
-  if (!match?.[1]) return null;
+  if (!match?.[1]) {
+    return null;
+  }
   const parsed = Number.parseInt(match[1], 10);
   return Number.isFinite(parsed) ? parsed : null;
 }

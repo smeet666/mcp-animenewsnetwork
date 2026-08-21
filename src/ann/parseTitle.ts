@@ -49,10 +49,14 @@ import {
  */
 function readWarning(root: XmlElement): "no-result" | null {
   const warning = firstChild(root, EL.warning);
-  if (!warning) return null;
+  if (!warning) {
+    return null;
+  }
 
   const text = textOf(warning) ?? "";
-  if (/no result/i.test(text)) return "no-result";
+  if (/no result/i.test(text)) {
+    return "no-result";
+  }
   throw invalidInput(
     `Anime News Network refused the request: ${text || "no reason given"}`,
     "Check the id or the query passed to this tool.",
@@ -60,8 +64,12 @@ function readWarning(root: XmlElement): "no-result" | null {
 }
 
 function recordKind(element: XmlElement): TitleKind | null {
-  if (element.name === EL.anime) return "anime";
-  if (element.name === EL.manga) return "manga";
+  if (element.name === EL.anime) {
+    return "anime";
+  }
+  if (element.name === EL.manga) {
+    return "manga";
+  }
   return null;
 }
 
@@ -69,7 +77,9 @@ function titleRecords(root: XmlElement): Array<{ element: XmlElement; kind: Titl
   const records: Array<{ element: XmlElement; kind: TitleKind }> = [];
   for (const element of children(root)) {
     const kind = recordKind(element);
-    if (kind) records.push({ element, kind });
+    if (kind) {
+      records.push({ element, kind });
+    }
   }
   return records;
 }
@@ -78,9 +88,13 @@ function titleRecords(root: XmlElement): Array<{ element: XmlElement; kind: Titl
 function infoValues(element: XmlElement, type: string): string[] {
   const values: string[] = [];
   for (const info of children(element, EL.info)) {
-    if (attr(info, ATTR.type) !== type) continue;
+    if (attr(info, ATTR.type) !== type) {
+      continue;
+    }
     const text = textOf(info);
-    if (text) values.push(text);
+    if (text) {
+      values.push(text);
+    }
   }
   return values;
 }
@@ -98,7 +112,9 @@ function infoValue(element: XmlElement, type: string): string | null {
 function toSummary(element: XmlElement, kind: TitleKind): TitleSummary | null {
   const id = intAttr(element, ATTR.id);
   const name = attr(element, ATTR.name);
-  if (id === null || name === null) return null;
+  if (id === null || name === null) {
+    return null;
+  }
 
   return {
     id,
@@ -135,14 +151,18 @@ export function parseTitleList(xml: string, url: string, onSkip?: OnSkip): Title
   const rows: TitleSummary[] = [];
   for (const { element, kind } of records) {
     const row = toSummary(element, kind);
-    if (row) rows.push(row);
+    if (row) {
+      rows.push(row);
+    }
   }
 
   if (rows.length === 0) {
     throw parseFailure(url, `${records.length} records but none carried an id and a name`);
   }
   const skipped = records.length - rows.length;
-  if (skipped > 0) onSkip?.(skipped, records.length);
+  if (skipped > 0) {
+    onSkip?.(skipped, records.length);
+  }
 
   return rows;
 }
@@ -162,7 +182,9 @@ export function parseTitleDetail(xml: string, url: string, what: string): TitleD
   const summary = toSummary(element, kind);
   // A detail lookup asked for one specific entry, so an unreadable record here
   // is a failure rather than a row to skip.
-  if (!summary) throw parseFailure(url, `the ${element.name} record has no id or no name`);
+  if (!summary) {
+    throw parseFailure(url, `the ${element.name} record has no id or no name`);
+  }
 
   return {
     ...summary,
@@ -191,10 +213,14 @@ export function parseTitleDetail(xml: string, url: string, what: string): TitleD
 
 function pictureUrl(element: XmlElement): string | null {
   for (const info of children(element, EL.info)) {
-    if (attr(info, ATTR.type) !== INFO.picture) continue;
+    if (attr(info, ATTR.type) !== INFO.picture) {
+      continue;
+    }
     // The src sits on <info> itself, and is repeated on a nested <img>.
     const src = attr(info, ATTR.src);
-    if (src) return src;
+    if (src) {
+      return src;
+    }
   }
   return null;
 }
@@ -205,7 +231,9 @@ function parseCast(element: XmlElement): CastCredit[] {
     const role = textOf(firstChild(node, EL.role));
     const person = firstChild(node, EL.person);
     const name = textOf(person);
-    if (!role || !name) continue;
+    if (!role || !name) {
+      continue;
+    }
     credits.push({
       role,
       person: name,
@@ -222,7 +250,9 @@ function parseStaff(element: XmlElement): StaffCredit[] {
     const task = textOf(firstChild(node, EL.task));
     const person = firstChild(node, EL.person);
     const name = textOf(person);
-    if (!task || !name) continue;
+    if (!task || !name) {
+      continue;
+    }
     credits.push({ task, person: name, personId: person ? intAttr(person, ATTR.id) : null });
   }
   return credits;
@@ -234,7 +264,9 @@ function parseCompanies(element: XmlElement): CompanyCredit[] {
     const task = textOf(firstChild(node, EL.task));
     const company = firstChild(node, EL.company);
     const name = textOf(company);
-    if (!task || !name) continue;
+    if (!task || !name) {
+      continue;
+    }
     credits.push({ task, company: name, companyId: company ? intAttr(company, ATTR.id) : null });
   }
   return credits;
@@ -244,7 +276,9 @@ function parseEpisodes(element: XmlElement): EpisodeEntry[] {
   const episodes: EpisodeEntry[] = [];
   for (const node of children(element, EL.episode)) {
     const num = attr(node, ATTR.num);
-    if (num === null) continue;
+    if (num === null) {
+      continue;
+    }
     const title = firstChild(node, EL.title);
     episodes.push({
       num,
@@ -259,7 +293,9 @@ function parseReleases(element: XmlElement): ReleaseEntry[] {
   const releases: ReleaseEntry[] = [];
   for (const node of children(element, EL.release)) {
     const name = textOf(node);
-    if (!name) continue;
+    if (!name) {
+      continue;
+    }
     releases.push({ name, date: attr(node, ATTR.date), href: attr(node, ATTR.href) });
   }
   return releases;
@@ -274,7 +310,9 @@ function parseRelated(element: XmlElement): RelatedEntry[] {
     for (const node of children(element, name)) {
       const id = intAttr(node, ATTR.id);
       const relation = attr(node, ATTR.rel);
-      if (id === null || !relation) continue;
+      if (id === null || !relation) {
+        continue;
+      }
       related.push({ id, relation, direction });
     }
   }
@@ -286,7 +324,9 @@ function parseLinked(element: XmlElement, name: string): LinkedItem[] {
   for (const node of children(element, name)) {
     const href = attr(node, ATTR.href);
     const title = textOf(node);
-    if (!href || !title) continue;
+    if (!href || !title) {
+      continue;
+    }
     items.push({ title, href, date: attr(node, ATTR.datetime) ?? attr(node, ATTR.date) });
   }
   return items;
@@ -294,7 +334,9 @@ function parseLinked(element: XmlElement, name: string): LinkedItem[] {
 
 function parseRatings(element: XmlElement): Ratings | null {
   const node = firstChild(element, EL.ratings);
-  if (!node) return null;
+  if (!node) {
+    return null;
+  }
   return {
     votes: intAttr(node, ATTR.votes),
     weightedScore: floatAttr(node, ATTR.weightedScore),

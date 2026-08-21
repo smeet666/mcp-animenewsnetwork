@@ -59,7 +59,9 @@ export async function runSearchTitles(
     const results = filtered.slice(0, args.limit).map(toTitleSummaryOut);
 
     const notes: string[] = [];
-    if (cached) notes.push("Served from this server's short-lived in-memory cache.");
+    if (cached) {
+      notes.push("Served from this server's short-lived in-memory cache.");
+    }
     if (filtered.length > results.length) {
       notes.push(
         `${filtered.length} entries matched and ${results.length} are shown. Narrow the query for a more useful set.`,

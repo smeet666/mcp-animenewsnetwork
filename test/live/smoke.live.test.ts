@@ -196,7 +196,9 @@ describe.runIf(enabled)("live Anime News Network", () => {
     // description. A summary that still carries tags is being handed to a model
     // as literal angle brackets.
     for (const item of news.data) {
-      if (item.summary === null) continue;
+      if (item.summary === null) {
+        continue;
+      }
       expect(item.summary, `markup survived in the summary of "${item.title}"`).not.toMatch(
         /<[a-z/!]/i,
       );

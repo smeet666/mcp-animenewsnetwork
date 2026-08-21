@@ -8,6 +8,17 @@ import { AnnError, type ErrorCode } from "../../src/errors.js";
 const here = dirname(fileURLToPath(import.meta.url));
 const fixturesDir = join(here, "..", "fixtures");
 
+/** The address a fetch was called with, whichever of the three shapes it took. */
+function addressOf(input: unknown): string {
+  if (typeof input === "string") {
+    return input;
+  }
+  if (input instanceof URL) {
+    return input.toString();
+  }
+  return String((input as { url?: unknown }).url);
+}
+
 export function fixtureText(name: string): string {
   return readFileSync(join(fixturesDir, name), "utf8");
 }
@@ -64,12 +75,7 @@ export function makeFetch(
 ): FetchStub {
   const calls: string[] = [];
   const impl = (async (input: unknown, init?: RequestInit) => {
-    const url =
-      typeof input === "string"
-        ? input
-        : input instanceof URL
-          ? input.toString()
-          : String((input as { url?: unknown }).url);
+    const url = addressOf(input);
     calls.push(url);
     return handler(url, init);
   }) as unknown as typeof fetch;
@@ -101,7 +107,9 @@ export function fixtureRouter(overrides: Record<string, string> = {}): FetchStub
   return makeFetch((url) => {
     const decoded = decodeURIComponent(url);
     for (const fragment of fragments) {
-      if (decoded.includes(fragment)) return xmlResponse(fixtureText(routes[fragment] as string));
+      if (decoded.includes(fragment)) {
+        return xmlResponse(fixtureText(routes[fragment] as string));
+      }
     }
     throw new Error(`unexpected url in test: ${url}`);
   });

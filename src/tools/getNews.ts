@@ -61,7 +61,9 @@ export async function runGetNews(client: AnnClient, args: GetNewsArgs): Promise<
     const items = filtered.slice(0, args.limit).map(toNewsItemOut);
 
     const notes: string[] = [];
-    if (cached) notes.push("Served from this server's short-lived in-memory cache.");
+    if (cached) {
+      notes.push("Served from this server's short-lived in-memory cache.");
+    }
     if (filtered.length > items.length) {
       notes.push(
         `${filtered.length} stories are in the feed and the first ${items.length} are shown.`,

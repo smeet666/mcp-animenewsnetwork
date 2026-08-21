@@ -110,7 +110,7 @@ export class AnnClient {
    */
   async searchTitles(query: string): Promise<Outcome<TitleSummary[]>> {
     const url = titleSearchUrl(query);
-    return this.fetchParsed(url, this.encyclopediaCache, (body) =>
+    return await this.fetchParsed(url, this.encyclopediaCache, (body) =>
       parseTitleList(body, url, (skipped, total) => {
         this.logger.info(`skipped ${skipped} of ${total} unreadable records on ${url}`);
       }),
@@ -119,14 +119,14 @@ export class AnnClient {
 
   async getTitle(kind: TitleKind, id: number): Promise<Outcome<TitleDetail>> {
     const url = titleDetailUrl(kind, id);
-    return this.fetchParsed(url, this.encyclopediaCache, (body) =>
+    return await this.fetchParsed(url, this.encyclopediaCache, (body) =>
       parseTitleDetail(body, url, `${kind} id ${id}`),
     );
   }
 
   async listRecent(kind: RecentKind, limit: number, offset: number): Promise<Outcome<ReportPage>> {
     const url = recentReportUrl(RECENT_REPORT_IDS[kind], limit, offset);
-    return this.fetchParsed(url, this.encyclopediaCache, (body) => parseReport(body, url));
+    return await this.fetchParsed(url, this.encyclopediaCache, (body) => parseReport(body, url));
   }
 
   async browseTitles(options: {
@@ -136,12 +136,12 @@ export class AnnClient {
     startsWith?: string;
   }): Promise<Outcome<ReportPage>> {
     const url = titleListReportUrl(options);
-    return this.fetchParsed(url, this.encyclopediaCache, (body) => parseReport(body, url));
+    return await this.fetchParsed(url, this.encyclopediaCache, (body) => parseReport(body, url));
   }
 
   async getNews(feed: FeedName, edition: Edition): Promise<Outcome<NewsItem[]>> {
     const url = feedUrl(feed, edition);
-    return this.fetchParsed(url, this.newsCache, (body) => parseFeed(body, url));
+    return await this.fetchParsed(url, this.newsCache, (body) => parseFeed(body, url));
   }
 
   /**

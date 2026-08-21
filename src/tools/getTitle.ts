@@ -170,7 +170,7 @@ export const getTitleOutputShape = {
 export interface GetTitleArgs {
   id: number;
   kind: "anime" | "manga";
-  sections: Array<(typeof SECTIONS)[number]>;
+  sections: (typeof SECTIONS)[number][];
   max_chars: number;
   offset: number;
 }
@@ -180,7 +180,9 @@ export async function runGetTitle(client: AnnClient, args: GetTitleArgs): Promis
     const { data, cached } = await client.getTitle(args.kind, args.id);
     const wanted = new Set(args.sections);
     const notes: string[] = [];
-    if (cached) notes.push("Served from this server's short-lived in-memory cache.");
+    if (cached) {
+      notes.push("Served from this server's short-lived in-memory cache.");
+    }
 
     const fullSummary = data.plotSummary ?? "";
     const { slice, nextOffset } = sliceAtLineBoundary(fullSummary, args.offset, args.max_chars);
@@ -294,19 +296,26 @@ function capCastAcrossLanguages<T extends { lang: string | null }>(
   cap: number,
   notes: string[],
 ): T[] {
-  if (credits.length <= cap) return credits;
+  if (credits.length <= cap) {
+    return credits;
+  }
 
   const byLanguage = new Map<string, T[]>();
   for (const credit of credits) {
     const key = credit.lang ?? "";
     const bucket = byLanguage.get(key);
-    if (bucket) bucket.push(credit);
-    else byLanguage.set(key, [credit]);
+    if (bucket) {
+      bucket.push(credit);
+    } else {
+      byLanguage.set(key, [credit]);
+    }
   }
 
   const share = Math.max(1, Math.floor(cap / byLanguage.size));
   const kept: T[] = [];
-  for (const bucket of byLanguage.values()) kept.push(...bucket.slice(0, share));
+  for (const bucket of byLanguage.values()) {
+    kept.push(...bucket.slice(0, share));
+  }
 
   notes.push(
     `${credits.length} cast credits exist across ${byLanguage.size} languages and up to ${share} per ` +
@@ -321,12 +330,16 @@ function tallyLanguages<T extends { lang: string | null }>(
   credits: T[],
 ): Array<{ lang: string | null; credits: number }> {
   const counts = new Map<string | null, number>();
-  for (const credit of credits) counts.set(credit.lang, (counts.get(credit.lang) ?? 0) + 1);
+  for (const credit of credits) {
+    counts.set(credit.lang, (counts.get(credit.lang) ?? 0) + 1);
+  }
   return [...counts.entries()].map(([lang, count]) => ({ lang, credits: count }));
 }
 
 function capped<T>(items: T[], cap: number, label: string, notes: string[]): T[] {
-  if (items.length <= cap) return items;
+  if (items.length <= cap) {
+    return items;
+  }
   notes.push(`${items.length} ${label} exist and the first ${cap} are shown.`);
   return items.slice(0, cap);
 }
@@ -336,7 +349,9 @@ function renderPeople(
   label: string,
   rows: Array<{ role?: string; task?: string; person: string; lang?: string | null }>,
 ): string[] {
-  if (rows.length === 0) return [];
+  if (rows.length === 0) {
+    return [];
+  }
   return [
     "",
     `${label}:`,
@@ -346,6 +361,51 @@ function renderPeople(
       return `  ${what ? `${what}: ` : ""}${row.person}${lang}`;
     }),
   ];
+}
+
+/** The episode list, numbered as the encyclopedia numbers it. */
+function renderEpisodes(structured: Record<string, unknown>): string[] {
+  const episodes = (structured.episodes ?? []) as Array<{ num: string; title: string | null }>;
+  if (episodes.length === 0) {
+    return [];
+  }
+
+  return [
+    "",
+    "Episodes:",
+    ...episodes.map((episode) => `  ${episode.num}. ${episode.title ?? ""}`.trimEnd()),
+  ];
+}
+
+/**
+ * The sections a caller asked for, each printed rather than announced.
+ *
+ * A text-only client that reads a promise of a section has paid a request for
+ * nothing, so a section with rows is written out and one without is left off.
+ */
+function renderListedSections(structured: Record<string, unknown>, wanted: Set<string>): string[] {
+  const lines: string[] = [];
+
+  for (const [section, label] of [
+    ["releases", "Releases"],
+    ["related", "Related"],
+    ["news", "News"],
+    ["reviews", "Reviews"],
+  ] as const) {
+    const rows = (structured[section] ?? []) as Record<string, unknown>[];
+    if (!wanted.has(section) || rows.length === 0) {
+      continue;
+    }
+
+    lines.push("", `${label}:`);
+    for (const row of rows) {
+      const title = (row.title ?? row.name ?? row.story ?? "") as string;
+      const link = (row.link ?? row.url ?? row.sourceUrl ?? "") as string;
+      lines.push(`  ${title || JSON.stringify(row)}${link ? ` — ${link}` : ""}`);
+    }
+  }
+
+  return lines;
 }
 
 function renderSummary(
@@ -363,13 +423,21 @@ function renderSummary(
     .join(" ");
 
   const lines = [header];
-  if (data.genres.length > 0) lines.push(`Genres: ${data.genres.join(", ")}`);
-  if (data.themes.length > 0) lines.push(`Themes: ${data.themes.join(", ")}`);
-  if (data.episodeCount) lines.push(`Episodes: ${data.episodeCount}`);
+  if (data.genres.length > 0) {
+    lines.push(`Genres: ${data.genres.join(", ")}`);
+  }
+  if (data.themes.length > 0) {
+    lines.push(`Themes: ${data.themes.join(", ")}`);
+  }
+  if (data.episodeCount) {
+    lines.push(`Episodes: ${data.episodeCount}`);
+  }
   if (data.ratings?.weightedScore !== null && data.ratings?.weightedScore !== undefined) {
     lines.push(`Rating: ${data.ratings.weightedScore} from ${data.ratings.votes ?? "?"} votes`);
   }
-  if (plot) lines.push("", plot);
+  if (plot) {
+    lines.push("", plot);
+  }
 
   // A section is printed, not announced: a text-only client that reads the
   // promise alone has paid a request for nothing.
@@ -382,28 +450,8 @@ function renderSummary(
   lines.push(...renderPeople("Cast", cast));
   lines.push(...renderPeople("Staff", staff));
 
-  const episodes = (structured.episodes ?? []) as Array<{ num: string; title: string | null }>;
-  if (episodes.length > 0) {
-    lines.push("", "Episodes:");
-    for (const episode of episodes)
-      lines.push(`  ${episode.num}. ${episode.title ?? ""}`.trimEnd());
-  }
-
-  for (const [section, label] of [
-    ["releases", "Releases"],
-    ["related", "Related"],
-    ["news", "News"],
-    ["reviews", "Reviews"],
-  ] as const) {
-    const rows = (structured[section] ?? []) as Array<Record<string, unknown>>;
-    if (!wanted.has(section) || rows.length === 0) continue;
-    lines.push("", `${label}:`);
-    for (const row of rows) {
-      const title = (row.title ?? row.name ?? row.story ?? "") as string;
-      const link = (row.link ?? row.url ?? row.sourceUrl ?? "") as string;
-      lines.push(`  ${title || JSON.stringify(row)}${link ? ` — ${link}` : ""}`);
-    }
-  }
+  lines.push(...renderEpisodes(structured));
+  lines.push(...renderListedSections(structured, wanted));
 
   return lines.join("\n");
 }

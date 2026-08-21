@@ -104,7 +104,9 @@ describe("search_titles", () => {
     const result = await call(client, "search_titles", { query: "placeholder", kind: "manga" });
     const rows = (result.structuredContent as { results: { kind: string }[] }).results;
     expect(rows.length).toBeGreaterThan(0);
-    for (const row of rows) expect(row.kind).toBe("manga");
+    for (const row of rows) {
+      expect(row.kind).toBe("manga");
+    }
   });
 
   it("reports a search that matched nothing as a success with no rows", async () => {
@@ -190,7 +192,9 @@ describe("list_recent", () => {
     expect(result.isError ?? false).toBe(false);
     const rows = (result.structuredContent as { rows: Record<string, unknown>[] }).rows;
     expect(rows).toHaveLength(3);
-    for (const row of rows) expect(row.source_url, `row ${String(row.id)}`).not.toBeNull();
+    for (const row of rows) {
+      expect(row.source_url, `row ${String(row.id)}`).not.toBeNull();
+    }
   });
 
   it("pages by what the site sent, not by what could be read", async () => {
@@ -247,7 +251,9 @@ describe("get_news", () => {
     expect(result.isError ?? false).toBe(false);
     const items = (result.structuredContent as { items: Record<string, unknown>[] }).items;
     expect(items.length).toBeGreaterThan(0);
-    for (const item of items) expect(String(item.link)).toContain("animenewsnetwork.com");
+    for (const item of items) {
+      expect(String(item.link)).toContain("animenewsnetwork.com");
+    }
   });
 
   it("keeps only the stories tagged with the requested category", async () => {
@@ -255,7 +261,9 @@ describe("get_news", () => {
     const result = await call(client, "get_news", { category: "anime" });
     const items = (result.structuredContent as { items: { category: string }[] }).items;
     expect(items.length).toBeGreaterThan(0);
-    for (const item of items) expect(item.category).toBe("Anime");
+    for (const item of items) {
+      expect(item.category).toBe("Anime");
+    }
   });
 
   it("reads the edition asked for rather than following a redirect to find it", async () => {
