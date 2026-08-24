@@ -68,7 +68,11 @@ describe("AnnClient caching", () => {
     // once the site is healthy.
     const bodies = [fixtureText("html-page.html"), fixtureText("search-results.xml")];
     let call = 0;
-    const impl = (async () => xmlResponse(bodies[Math.min(call++, 1)] as string)) as typeof fetch;
+    const impl = (async () => {
+      const at = Math.min(call, 1);
+      call += 1;
+      return xmlResponse(bodies[at] as string);
+    }) as typeof fetch;
     const client = new AnnClient({ config: cachingConfig(), logger, fetchImpl: impl });
 
     await expect(client.searchTitles("placeholder")).rejects.toBeInstanceOf(AnnError);
@@ -85,7 +89,11 @@ describe("AnnClient caching", () => {
       () => xmlResponse(fixtureText("search-results.xml")),
     ];
     let call = 0;
-    const impl = (async () => (bodies[Math.min(call++, 1)] as () => Response)()) as typeof fetch;
+    const impl = (async () => {
+      const at = Math.min(call, 1);
+      call += 1;
+      return (bodies[at] as () => Response)();
+    }) as typeof fetch;
     const client = new AnnClient({ config: cachingConfig(), logger, fetchImpl: impl });
 
     await expect(client.searchTitles("placeholder")).rejects.toBeInstanceOf(AnnError);

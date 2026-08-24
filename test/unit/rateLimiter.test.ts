@@ -1,17 +1,25 @@
-import { describe, expect, it } from "vitest";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { RateLimiter, sleep } from "../../src/ann/rateLimiter.js";
 
 /**
- * A small interval keeps these tests fast while still being far enough above
- * timer jitter to measure. The tolerance absorbs the few milliseconds a timer
- * can fire early on a loaded machine.
+ * The clock is pinned and moved by hand, so a gap is what the limiter asked for
+ * rather than what the machine happened to take. Measured against the real
+ * clock, a pacing test fails whenever the machine stalls, which says nothing
+ * about the limiter.
  */
 const INTERVAL = 60;
-const TOLERANCE = 8;
+
+beforeEach(() => {
+  vi.useFakeTimers();
+});
+
+afterEach(() => {
+  vi.useRealTimers();
+});
 
 function expectPaced(gap: number, interval = INTERVAL): void {
   expect(gap, `requests were ${gap}ms apart, under the ${interval}ms floor`).toBeGreaterThanOrEqual(
-    interval - TOLERANCE,
+    interval,
   );
 }
 
@@ -20,7 +28,7 @@ describe("RateLimiter.schedule", () => {
     const limiter = new RateLimiter({ minIntervalMs: 0 });
     const order: number[] = [];
 
-    await Promise.all(
+    const all = Promise.all(
       [1, 2, 3].map((n) =>
         limiter.schedule(async () => {
           await sleep(n === 1 ? 20 : 0);
@@ -28,6 +36,8 @@ describe("RateLimiter.schedule", () => {
         }),
       ),
     );
+    await vi.advanceTimersByTimeAsync(100);
+    await all;
 
     expect(order).toEqual([1, 2, 3]);
   });
@@ -37,7 +47,7 @@ describe("RateLimiter.schedule", () => {
     let running = 0;
     let overlapped = false;
 
-    await Promise.all(
+    const all = Promise.all(
       [1, 2, 3].map(() =>
         limiter.schedule(async () => {
           running += 1;
@@ -49,6 +59,8 @@ describe("RateLimiter.schedule", () => {
         }),
       ),
     );
+    await vi.advanceTimersByTimeAsync(100);
+    await all;
 
     expect(overlapped).toBe(false);
   });
@@ -83,12 +95,16 @@ describe("RateLimiter.beforeRequest", () => {
     const limiter = new RateLimiter({ minIntervalMs: INTERVAL });
     const stamps: number[] = [];
 
-    for (const _ of [1, 2, 3]) {
-      await limiter.schedule(async () => {
-        await limiter.beforeRequest();
-        stamps.push(Date.now());
-      });
-    }
+    const all = Promise.all(
+      [1, 2, 3].map(() =>
+        limiter.schedule(async () => {
+          await limiter.beforeRequest();
+          stamps.push(Date.now());
+        }),
+      ),
+    );
+    await vi.advanceTimersByTimeAsync(INTERVAL * 5);
+    await all;
 
     expectPaced((stamps[1] as number) - (stamps[0] as number));
     expectPaced((stamps[2] as number) - (stamps[1] as number));
@@ -100,12 +116,14 @@ describe("RateLimiter.beforeRequest", () => {
     const limiter = new RateLimiter({ minIntervalMs: INTERVAL });
     const stamps: number[] = [];
 
-    await limiter.schedule(async () => {
+    const run = limiter.schedule(async () => {
       for (const _ of [1, 2, 3]) {
         await limiter.beforeRequest();
         stamps.push(Date.now());
       }
     });
+    await vi.advanceTimersByTimeAsync(INTERVAL * 5);
+    await run;
 
     expectPaced((stamps[1] as number) - (stamps[0] as number));
     expectPaced((stamps[2] as number) - (stamps[1] as number));
@@ -119,16 +137,18 @@ describe("RateLimiter.beforeRequest", () => {
     let lastOfChain = 0;
     let firstOfNext = 0;
 
-    await limiter.schedule(async () => {
+    const chain = limiter.schedule(async () => {
       await limiter.beforeRequest();
       await limiter.beforeRequest();
       await limiter.beforeRequest();
       lastOfChain = Date.now();
     });
-    await limiter.schedule(async () => {
+    const next = limiter.schedule(async () => {
       await limiter.beforeRequest();
       firstOfNext = Date.now();
     });
+    await vi.advanceTimersByTimeAsync(INTERVAL * 8);
+    await Promise.all([chain, next]);
 
     expectPaced(firstOfNext - lastOfChain);
   });
@@ -141,7 +161,7 @@ describe("RateLimiter.beforeRequest", () => {
       await limiter.beforeRequest();
     }
 
-    expect(Date.now() - started).toBeLessThan(50);
+    expect(Date.now() - started).toBe(0);
   });
 
   it("does not delay the very first request", async () => {
@@ -150,7 +170,7 @@ describe("RateLimiter.beforeRequest", () => {
 
     await limiter.beforeRequest();
 
-    expect(Date.now() - started).toBeLessThan(50);
+    expect(Date.now() - started).toBe(0);
   });
 });
 
@@ -206,7 +226,9 @@ describe("RateLimiter.penalize and relax", () => {
 
     await limiter.beforeRequest();
     const started = Date.now();
-    await limiter.beforeRequest();
+    const next = limiter.beforeRequest();
+    await vi.advanceTimersByTimeAsync(raised);
+    await next;
 
     expectPaced(Date.now() - started, raised);
   });

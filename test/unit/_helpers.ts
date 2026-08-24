@@ -120,8 +120,8 @@ export function expectAnnError(fn: () => unknown, code: ErrorCode): AnnError {
   let thrown: unknown;
   try {
     fn();
-  } catch (error) {
-    thrown = error;
+  } catch (raised) {
+    thrown = raised;
   }
 
   expect(thrown, `expected an AnnError with code "${code}", nothing was thrown`).toBeInstanceOf(
