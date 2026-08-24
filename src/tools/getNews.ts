@@ -70,7 +70,9 @@ export async function runGetNews(client: AnnClient, args: GetNewsArgs): Promise<
       );
     }
     if (wanted && filtered.length === 0) {
-      const seen = [...new Set(data.map((item) => item.category).filter(Boolean))];
+      const seen: string[] = [
+        ...new Set(data.map((item) => item.category).filter((one): one is string => one !== null)),
+      ];
       notes.push(
         seen.length > 0
           ? `No story is tagged "${args.category}". This feed currently carries: ${seen.join(", ")}.`
