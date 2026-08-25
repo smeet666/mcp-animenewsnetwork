@@ -4,7 +4,10 @@
   "description": "MCP server for Anime News Network. Search the anime and manga encyclopedia, read cast, staff and episodes, and follow the news wire. No API key required.",
   "type": "module",
   "license": "MIT",
-  "author": "smeet666",
+  "author": {
+    "name": "Damien Bouissou",
+    "url": "https://github.com/smeet666"
+  },
   "homepage": "https://github.com/smeet666/mcp-animenewsnetwork#readme",
   "repository": {
     "type": "git",
