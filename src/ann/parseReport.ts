@@ -19,6 +19,9 @@ import { absoluteSiteUrl, titlePageUrl } from "./urls.js";
 import { attr, children, childText, expectRoot, parseDocument, textOf } from "./xml.js";
 
 const LINK_ELEMENTS = ["anime", "manga", "person", "company"] as const;
+
+/** The id a report row carries in the query string of its href. */
+const HREF_ID = /[?&]id=(\d+)/;
 type LinkKind = (typeof LINK_ELEMENTS)[number];
 
 export function parseReport(xml: string, url: string): ReportPage {
@@ -110,7 +113,7 @@ function idFromHref(href: string | null): number | null {
   if (!href) {
     return null;
   }
-  const match = /[?&]id=(\d+)/.exec(href);
+  const match = HREF_ID.exec(href);
   if (!match?.[1]) {
     return null;
   }

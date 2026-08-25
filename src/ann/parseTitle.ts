@@ -35,6 +35,9 @@ import {
   textOf,
 } from "./xml.js";
 
+/** The wording the site puts in a <warning> when a search matched nothing. */
+const NO_RESULT = /no result/i;
+
 /**
  * Read the site's own failure signal.
  *
@@ -54,7 +57,7 @@ function readWarning(root: XmlElement): "no-result" | null {
   }
 
   const text = textOf(warning) ?? "";
-  if (/no result/i.test(text)) {
+  if (NO_RESULT.test(text)) {
     return "no-result";
   }
   throw invalidInput(
