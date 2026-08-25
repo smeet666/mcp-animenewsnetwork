@@ -11,6 +11,7 @@ import { z } from "zod";
 import { AnnClient } from "./ann/client.js";
 import type { Config, Logger } from "./config.js";
 import { createLogger, loadConfig } from "./config.js";
+import { strictInput } from "./tools/arguments.js";
 import {
   getNewsDescription,
   getNewsInputShape,
@@ -84,7 +85,7 @@ export function createServer(options: CreateServerOptions = {}): McpServer {
     {
       title: "Search the encyclopedia",
       description: searchTitlesDescription,
-      inputSchema: z.object(searchTitlesInputShape),
+      inputSchema: strictInput(searchTitlesInputShape),
       outputSchema: z.object(searchTitlesOutputShape),
       annotations: READ_ONLY,
     },
@@ -96,7 +97,7 @@ export function createServer(options: CreateServerOptions = {}): McpServer {
     {
       title: "Read an encyclopedia entry",
       description: getTitleDescription,
-      inputSchema: z.object(getTitleInputShape),
+      inputSchema: strictInput(getTitleInputShape),
       outputSchema: z.object(getTitleOutputShape),
       annotations: READ_ONLY,
     },
@@ -108,7 +109,7 @@ export function createServer(options: CreateServerOptions = {}): McpServer {
     {
       title: "List recent or browse alphabetically",
       description: listRecentDescription,
-      inputSchema: z.object(listRecentInputShape),
+      inputSchema: strictInput(listRecentInputShape),
       outputSchema: z.object(listRecentOutputShape),
       annotations: READ_ONLY,
     },
@@ -120,7 +121,7 @@ export function createServer(options: CreateServerOptions = {}): McpServer {
     {
       title: "Read the news wire",
       description: getNewsDescription,
-      inputSchema: z.object(getNewsInputShape),
+      inputSchema: strictInput(getNewsInputShape),
       outputSchema: z.object(getNewsOutputShape),
       annotations: READ_ONLY,
     },
