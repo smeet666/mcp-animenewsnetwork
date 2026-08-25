@@ -26,7 +26,7 @@ describe("parseReport", () => {
 
     it("reads the fields off the child elements", () => {
       expect(rows[0]).toMatchObject({
-        id: 40401,
+        id: 40_401,
         name: "Placeholder Listed Title 1",
         type: "TV",
         precision: "TV 1",
@@ -73,7 +73,7 @@ describe("parseReport", () => {
     });
 
     it("extracts the id from the href", () => {
-      expect(rows.map((row) => row.id)).toEqual([40401, 40402, 40403]);
+      expect(rows.map((row) => row.id)).toEqual([40_401, 40_402, 40_403]);
     });
 
     it("reads the kind from the linking element", () => {
@@ -108,7 +108,7 @@ describe("parseReport", () => {
 
     it("drops the entry it cannot read and keeps the rest", () => {
       expect(page.rows).toHaveLength(2);
-      expect(page.rows.map((row) => row.id)).toEqual([40401, 40403]);
+      expect(page.rows.map((row) => row.id)).toEqual([40_401, 40_403]);
     });
 
     it("counts the entry the site sent even though no row came out of it", () => {

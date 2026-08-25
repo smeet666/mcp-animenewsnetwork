@@ -165,7 +165,7 @@ describe("RateLimiter.beforeRequest", () => {
   });
 
   it("does not delay the very first request", async () => {
-    const limiter = new RateLimiter({ minIntervalMs: 5_000 });
+    const limiter = new RateLimiter({ minIntervalMs: 5000 });
     const started = Date.now();
 
     await limiter.beforeRequest();

@@ -196,13 +196,13 @@ describe("parseTitleDetail", () => {
     expect(dub).toEqual({
       role: "Captain Placeholder Role",
       person: "German Voice Fixture Person",
-      personId: 22731,
+      personId: 22_731,
       lang: "DE",
     });
 
     const original = detail.cast.find((credit) => credit.person.startsWith("Original"));
     expect(original?.lang, "the original cast must carry no dub language").toBeNull();
-    expect(original?.personId).toBe(32731);
+    expect(original?.personId).toBe(32_731);
   });
 
   it("reads staff and company credits into their own lists", () => {
@@ -220,7 +220,7 @@ describe("parseTitleDetail", () => {
 
   it("keeps the rating figures numeric", () => {
     expect(detail.ratings).toEqual({
-      votes: 12511,
+      votes: 12_511,
       weightedScore: 8.8881,
       bayesianScore: 8.8861,
     });

@@ -17,6 +17,7 @@
 import { mkdirSync, writeFileSync } from "node:fs";
 import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
+import process from "node:process";
 
 const OUT_DIR = join(dirname(fileURLToPath(import.meta.url)), "..", "test", "fixtures");
 
@@ -135,7 +136,7 @@ function ann(body) {
 /** Shape A: report 155, which lists titles with their fields as elements. */
 function titleListItem(seed) {
   return `<item>
-    <id>${40400 + seed}</id>
+    <id>${40_400 + seed}</id>
     <gid>383109600${seed}</gid>
     <type>${seed % 2 === 0 ? "manga" : "TV"}</type>
     <name>Placeholder Listed Title ${seed}</name>
@@ -148,7 +149,7 @@ function titleListItem(seed) {
 /** Shape B: reports 148-151, where the id only exists inside the href. */
 function recentItem(kind, seed) {
   return `<item>
-    <${kind} href="/encyclopedia/${kind}.php?id=${40400 + seed}">Placeholder Added ${kind} ${seed} (TV ${seed})</${kind}>
+    <${kind} href="/encyclopedia/${kind}.php?id=${40_400 + seed}">Placeholder Added ${kind} ${seed} (TV ${seed})</${kind}>
     <date_added>2026-08-03 06:0${seed}:41</date_added>
     <unknown-column>noise the parser must ignore</unknown-column>
   </item>`;
