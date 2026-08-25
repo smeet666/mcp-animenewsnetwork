@@ -231,7 +231,7 @@ function parseCast(element: XmlElement): CastCredit[] {
     const role = textOf(firstChild(node, EL.role));
     const person = firstChild(node, EL.person);
     const name = textOf(person);
-    if (!role || !name) {
+    if (!(role && name)) {
       continue;
     }
     credits.push({
@@ -250,7 +250,7 @@ function parseStaff(element: XmlElement): StaffCredit[] {
     const task = textOf(firstChild(node, EL.task));
     const person = firstChild(node, EL.person);
     const name = textOf(person);
-    if (!task || !name) {
+    if (!(task && name)) {
       continue;
     }
     credits.push({ task, person: name, personId: person ? intAttr(person, ATTR.id) : null });
@@ -264,7 +264,7 @@ function parseCompanies(element: XmlElement): CompanyCredit[] {
     const task = textOf(firstChild(node, EL.task));
     const company = firstChild(node, EL.company);
     const name = textOf(company);
-    if (!task || !name) {
+    if (!(task && name)) {
       continue;
     }
     credits.push({ task, company: name, companyId: company ? intAttr(company, ATTR.id) : null });
@@ -324,7 +324,7 @@ function parseLinked(element: XmlElement, name: string): LinkedItem[] {
   for (const node of children(element, name)) {
     const href = attr(node, ATTR.href);
     const title = textOf(node);
-    if (!href || !title) {
+    if (!(href && title)) {
       continue;
     }
     items.push({ title, href, date: attr(node, ATTR.datetime) ?? attr(node, ATTR.date) });

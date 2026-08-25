@@ -171,7 +171,7 @@ describe("get_title", () => {
 
   it("surfaces an unknown id as a not_found error", async () => {
     const client = await connect(fixtureRouter({ "api.xml?anime=": "warning-no-result.xml" }).impl);
-    const result = await call(client, "get_title", { id: 99999999, kind: "anime" });
+    const result = await call(client, "get_title", { id: 99_999_999, kind: "anime" });
     expect(result.isError).toBe(true);
     expect(textOf(result)).toContain("not_found");
   });

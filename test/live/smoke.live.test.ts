@@ -14,6 +14,7 @@
  * Excluded from the ordinary CI run: enable with ANN_LIVE=1.
  */
 
+import process from "node:process";
 import { describe, expect, it } from "vitest";
 import { AnnClient } from "../../src/ann/client.js";
 import { createLogger, loadConfig } from "../../src/config.js";
@@ -129,7 +130,7 @@ describe.runIf(enabled)("live Anime News Network", () => {
     // with a <warning> element. If that stopped being detected, the server would
     // report a title that does not exist as an empty entry.
     await expect(
-      client.getTitle("anime", 99999999),
+      client.getTitle("anime", 99_999_999),
       "an unknown id no longer surfaces as not_found",
     ).rejects.toMatchObject({ code: "not_found" });
   }, 120_000);

@@ -29,7 +29,7 @@ export function parseFeed(xml: string, url: string): NewsItem[] {
     const title = childText(node, FEED_EL.title);
     const link = childText(node, FEED_EL.link);
     // A headline with no link cannot be attributed, which the terms require.
-    if (!title || !link) {
+    if (!(title && link)) {
       continue;
     }
 
