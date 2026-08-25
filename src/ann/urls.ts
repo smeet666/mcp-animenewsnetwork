@@ -11,6 +11,7 @@ import type { TitleKind } from "../types.js";
 
 const API_BASE = "https://cdn.animenewsnetwork.com/encyclopedia";
 const SITE_BASE = "https://www.animenewsnetwork.com";
+const ABSOLUTE_URL = /^https?:\/\//i;
 
 export type FeedName = "all" | "news" | "reviews";
 export type Edition = "us" | "uk" | "au";
@@ -93,7 +94,7 @@ export function titlePageUrl(kind: TitleKind, id: number): string {
 
 /** Report rows carry site-relative hrefs, which are useless to a reader as-is. */
 export function absoluteSiteUrl(href: string): string {
-  if (/^https?:\/\//i.test(href)) {
+  if (ABSOLUTE_URL.test(href)) {
     return href;
   }
   return `${SITE_BASE}${href.startsWith("/") ? "" : "/"}${href}`;
