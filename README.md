@@ -45,6 +45,23 @@ claude mcp add animenewsnetwork -- npx -y mcp-animenewsnetwork
 }
 ```
 
+### With Docker
+
+```json
+{
+  "mcpServers": {
+    "animenewsnetwork": {
+      "command": "docker",
+      "args": ["run", "-i", "--rm", "ghcr.io/smeet666/mcp-animenewsnetwork:2.0.0"]
+    }
+  }
+}
+```
+
+`-i` keeps stdin open, which is where the protocol travels, and no `-t` is
+passed: a TTY rewrites the stream and breaks it. The container needs outbound
+HTTPS to `www.animenewsnetwork.com` and `cdn.animenewsnetwork.com`, and nothing else: no volume, no port, no environment variable, no credential.
+
 **Bundle, without npm**
 
 Download `mcp-animenewsnetwork-<version>.mcpb` from
@@ -237,6 +254,24 @@ claude mcp add animenewsnetwork -- npx -y mcp-animenewsnetwork
   }
 }
 ```
+
+### Avec Docker
+
+```json
+{
+  "mcpServers": {
+    "animenewsnetwork": {
+      "command": "docker",
+      "args": ["run", "-i", "--rm", "ghcr.io/smeet666/mcp-animenewsnetwork:2.0.0"]
+    }
+  }
+}
+```
+
+`-i` garde l'entrée standard ouverte, qui est le canal du protocole, et aucun
+`-t` n'est passé : un terminal réécrit le flux et le casse. Le conteneur a besoin
+d'un accès HTTPS sortant vers `www.animenewsnetwork.com` et `cdn.animenewsnetwork.com`, et de rien d'autre :
+aucun volume, aucun port, aucune variable d'environnement, aucun identifiant.
 
 **Bundle, sans npm**
 

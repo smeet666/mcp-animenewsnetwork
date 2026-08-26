@@ -19,12 +19,12 @@
     "url": "https://github.com/smeet666/mcp-animenewsnetwork",
     "source": "github"
   },
-  "version": "1.2.4",
+  "version": "2.0.0",
   "packages": [
     {
       "registryType": "npm",
       "identifier": "mcp-animenewsnetwork",
-      "version": "1.2.4",
+      "version": "2.0.0",
       "transport": {
         "type": "stdio"
       },
@@ -48,8 +48,8 @@
     },
     {
       "registryType": "mcpb",
-      "identifier": "https://github.com/smeet666/mcp-animenewsnetwork/releases/download/v1.2.2/mcp-animenewsnetwork-1.2.2.mcpb",
-      "version": "1.2.4",
+      "identifier": "https://github.com/smeet666/mcp-animenewsnetwork/releases/download/v2.0.0/mcp-animenewsnetwork-2.0.0.mcpb",
+      "version": "2.0.0",
       "transport": {
         "type": "stdio"
       }
