@@ -41,19 +41,158 @@
   "tools": [
     {
       "name": "search_titles",
-      "description": "Find an entry by title."
+      "description": "Find an entry by title.",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "query": {
+            "type": "string",
+            "minLength": 1,
+            "description": "Title or part of one, for example 'cowboy bebop'."
+          },
+          "kind": {
+            "default": "both",
+            "description": "Restrict results to one kind. The encyclopedia returns both by default.",
+            "type": "string",
+            "enum": ["anime", "manga", "both"]
+          },
+          "limit": {
+            "default": 10,
+            "description": "How many rows to return.",
+            "type": "integer",
+            "minimum": 1,
+            "maximum": 50
+          }
+        },
+        "required": ["query"],
+        "$schema": "http://json-schema.org/draft-07/schema#",
+        "additionalProperties": false
+      }
     },
     {
       "name": "get_title",
-      "description": "Read one entry, section by section."
+      "description": "Read one entry, section by section.",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "integer",
+            "minimum": 1,
+            "maximum": 9007199254740991,
+            "description": "Encyclopedia id, from search_titles."
+          },
+          "kind": {
+            "type": "string",
+            "enum": ["anime", "manga"],
+            "description": "Which lookup the id belongs to, from search_titles."
+          },
+          "sections": {
+            "default": ["basic"],
+            "description": "Which parts to return. 'basic' is usually enough. Adding 'cast' or 'news' can multiply the size of the answer.",
+            "type": "array",
+            "items": {
+              "type": "string",
+              "enum": [
+                "basic",
+                "cast",
+                "staff",
+                "episodes",
+                "releases",
+                "related",
+                "news",
+                "reviews"
+              ]
+            }
+          },
+          "max_chars": {
+            "default": 4000,
+            "description": "Character budget for the plot summary.",
+            "type": "integer",
+            "minimum": 200,
+            "maximum": 20000
+          },
+          "offset": {
+            "default": 0,
+            "description": "Where to resume the plot summary.",
+            "type": "integer",
+            "minimum": 0,
+            "maximum": 9007199254740991
+          }
+        },
+        "required": ["id", "kind"],
+        "$schema": "http://json-schema.org/draft-07/schema#",
+        "additionalProperties": false
+      }
     },
     {
       "name": "list_recent",
-      "description": "Browse recently added or alphabetical listings."
+      "description": "Browse recently added or alphabetical listings.",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "kind": {
+            "default": "anime",
+            "description": "Which catalogue to list.",
+            "type": "string",
+            "enum": ["anime", "manga", "person", "company"]
+          },
+          "starts_with": {
+            "description": "Single letter. Switches to an alphabetical browse of titles. Anime and manga only.",
+            "type": "string",
+            "maxLength": 1
+          },
+          "limit": {
+            "default": 20,
+            "description": "How many rows to return.",
+            "type": "integer",
+            "minimum": 1,
+            "maximum": 50
+          },
+          "offset": {
+            "default": 0,
+            "description": "How many rows to skip, for paging.",
+            "type": "integer",
+            "minimum": 0,
+            "maximum": 9007199254740991
+          }
+        },
+        "$schema": "http://json-schema.org/draft-07/schema#",
+        "additionalProperties": false
+      }
     },
     {
       "name": "get_news",
-      "description": "Read the news wire."
+      "description": "Read the news wire.",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "feed": {
+            "default": "all",
+            "description": "Which feed to read. 'all' is the busiest.",
+            "type": "string",
+            "enum": ["all", "news", "reviews"]
+          },
+          "edition": {
+            "default": "us",
+            "description": "Regional edition. They differ mostly in release and licensing coverage.",
+            "type": "string",
+            "enum": ["us", "uk", "au"]
+          },
+          "category": {
+            "description": "Keep only items tagged this way, matched case-insensitively.",
+            "type": "string"
+          },
+          "limit": {
+            "default": 20,
+            "description": "How many stories to return.",
+            "type": "integer",
+            "minimum": 1,
+            "maximum": 100
+          }
+        },
+        "$schema": "http://json-schema.org/draft-07/schema#",
+        "additionalProperties": false
+      }
     }
   ],
   "compatibility": {
