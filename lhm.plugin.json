@@ -1,0 +1,1036 @@
+{
+  "author": "Damien Bouissou",
+  "authorUrl": "https://github.com/smeet666",
+  "description": "MCP server for Anime News Network. Search the anime and manga encyclopedia, read cast, staff and episodes, and follow the news wire. No API key required.",
+  "homepage": "https://github.com/smeet666/mcp-animenewsnetwork#readme",
+  "identifier": "smeet666-mcp-animenewsnetwork",
+  "name": "mcp-animenewsnetwork",
+  "prompts": [],
+  "resources": [],
+  "tags": [
+    "mcp",
+    "modelcontextprotocol",
+    "model-context-protocol",
+    "mcp-server",
+    "anime-news-network",
+    "animenewsnetwork",
+    "anime",
+    "manga",
+    "encyclopedia",
+    "news",
+    "claude",
+    "cursor",
+    "llm",
+    "ai",
+    "no-api-key"
+  ],
+  "tools": [
+    {
+      "name": "search_titles",
+      "title": "Search the encyclopedia",
+      "description": "Search the Anime News Network encyclopedia for anime and manga by title. Returns one compact row per match: id, kind, type, name, precision and vintage. Use the id and kind with get_title to read the full entry. Matching is on substring, so a short query returns a lot: narrow the query rather than raising 'limit'. This searches titles only. It cannot find an entry from a plot detail, a character or a studio.",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "query": {
+            "type": "string",
+            "minLength": 1,
+            "description": "Title or part of one, for example 'cowboy bebop'."
+          },
+          "kind": {
+            "default": "both",
+            "description": "Restrict results to one kind. The encyclopedia returns both by default.",
+            "type": "string",
+            "enum": ["anime", "manga", "both"]
+          },
+          "limit": {
+            "default": 10,
+            "description": "How many rows to return.",
+            "type": "integer",
+            "minimum": 1,
+            "maximum": 50
+          }
+        },
+        "required": ["query"],
+        "$schema": "http://json-schema.org/draft-07/schema#",
+        "additionalProperties": false
+      },
+      "outputSchema": {
+        "type": "object",
+        "properties": {
+          "query": {
+            "type": "string"
+          },
+          "results": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "id": {
+                  "type": "integer",
+                  "minimum": -9007199254740991,
+                  "maximum": 9007199254740991,
+                  "description": "Encyclopedia id. Pass this to get_title, together with 'kind'."
+                },
+                "kind": {
+                  "type": "string",
+                  "enum": ["anime", "manga"],
+                  "description": "Which get_title lookup this id belongs to."
+                },
+                "type": {
+                  "anyOf": [
+                    {
+                      "type": "string"
+                    },
+                    {
+                      "type": "null"
+                    }
+                  ],
+                  "description": "TV, movie, OAV, ONA, special, manga or novel."
+                },
+                "name": {
+                  "type": "string"
+                },
+                "precision": {
+                  "anyOf": [
+                    {
+                      "type": "string"
+                    },
+                    {
+                      "type": "null"
+                    }
+                  ],
+                  "description": "Disambiguator the site shows next to the name, such as 'TV 2'."
+                },
+                "vintage": {
+                  "anyOf": [
+                    {
+                      "type": "string"
+                    },
+                    {
+                      "type": "null"
+                    }
+                  ],
+                  "description": "Original release date or range, as published."
+                },
+                "source_url": {
+                  "type": "string",
+                  "description": "Encyclopedia page. Show this when citing the entry."
+                }
+              },
+              "required": ["id", "kind", "type", "name", "precision", "vintage", "source_url"],
+              "additionalProperties": false
+            }
+          },
+          "total_available": {
+            "type": "integer",
+            "minimum": -9007199254740991,
+            "maximum": 9007199254740991,
+            "description": "Matches before 'limit' was applied. Higher than results.length means narrow the query."
+          },
+          "notes": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          }
+        },
+        "required": ["query", "results", "total_available", "notes"],
+        "$schema": "http://json-schema.org/draft-07/schema#",
+        "additionalProperties": false
+      },
+      "annotations": {
+        "readOnlyHint": true,
+        "destructiveHint": false,
+        "idempotentHint": true,
+        "openWorldHint": true
+      },
+      "execution": {
+        "taskSupport": "forbidden"
+      }
+    },
+    {
+      "name": "get_title",
+      "title": "Read an encyclopedia entry",
+      "description": "Read one Anime News Network encyclopedia entry by id. Get the id and kind from search_titles first. Sections are opt-in because a full record is very large: ask only for what you need. 'basic' covers type, vintage, genres, themes, episode count, ratings and the plot summary. Long plot summaries are paginated: when 'truncated' is true, call again with 'offset' set to 'next_offset'.",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "integer",
+            "minimum": 1,
+            "maximum": 9007199254740991,
+            "description": "Encyclopedia id, from search_titles."
+          },
+          "kind": {
+            "type": "string",
+            "enum": ["anime", "manga"],
+            "description": "Which lookup the id belongs to, from search_titles."
+          },
+          "sections": {
+            "default": ["basic"],
+            "description": "Which parts to return. 'basic' is usually enough. Adding 'cast' or 'news' can multiply the size of the answer.",
+            "type": "array",
+            "items": {
+              "type": "string",
+              "enum": [
+                "basic",
+                "cast",
+                "staff",
+                "episodes",
+                "releases",
+                "related",
+                "news",
+                "reviews"
+              ]
+            }
+          },
+          "max_chars": {
+            "default": 4000,
+            "description": "Character budget for the plot summary.",
+            "type": "integer",
+            "minimum": 200,
+            "maximum": 20000
+          },
+          "offset": {
+            "default": 0,
+            "description": "Where to resume the plot summary.",
+            "type": "integer",
+            "minimum": 0,
+            "maximum": 9007199254740991
+          }
+        },
+        "required": ["id", "kind"],
+        "$schema": "http://json-schema.org/draft-07/schema#",
+        "additionalProperties": false
+      },
+      "outputSchema": {
+        "type": "object",
+        "properties": {
+          "title": {
+            "type": "object",
+            "properties": {
+              "id": {
+                "type": "integer",
+                "minimum": -9007199254740991,
+                "maximum": 9007199254740991,
+                "description": "Encyclopedia id. Pass this to get_title, together with 'kind'."
+              },
+              "kind": {
+                "type": "string",
+                "enum": ["anime", "manga"],
+                "description": "Which get_title lookup this id belongs to."
+              },
+              "type": {
+                "anyOf": [
+                  {
+                    "type": "string"
+                  },
+                  {
+                    "type": "null"
+                  }
+                ],
+                "description": "TV, movie, OAV, ONA, special, manga or novel."
+              },
+              "name": {
+                "type": "string"
+              },
+              "precision": {
+                "anyOf": [
+                  {
+                    "type": "string"
+                  },
+                  {
+                    "type": "null"
+                  }
+                ],
+                "description": "Disambiguator the site shows next to the name, such as 'TV 2'."
+              },
+              "vintage": {
+                "anyOf": [
+                  {
+                    "type": "string"
+                  },
+                  {
+                    "type": "null"
+                  }
+                ],
+                "description": "Original release date or range, as published."
+              },
+              "source_url": {
+                "type": "string",
+                "description": "Encyclopedia page. Show this when citing the entry."
+              }
+            },
+            "required": ["id", "kind", "type", "name", "precision", "vintage", "source_url"],
+            "additionalProperties": false
+          },
+          "alt_titles": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "genres": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "themes": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "episode_count": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "running_time": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "objectionable_content": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "official_websites": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "picture_url": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "opening_themes": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "ending_themes": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "ratings": {
+            "anyOf": [
+              {
+                "type": "object",
+                "properties": {
+                  "votes": {
+                    "anyOf": [
+                      {
+                        "type": "integer",
+                        "minimum": -9007199254740991,
+                        "maximum": 9007199254740991
+                      },
+                      {
+                        "type": "null"
+                      }
+                    ]
+                  },
+                  "weighted_score": {
+                    "anyOf": [
+                      {
+                        "type": "number"
+                      },
+                      {
+                        "type": "null"
+                      }
+                    ]
+                  },
+                  "bayesian_score": {
+                    "anyOf": [
+                      {
+                        "type": "number"
+                      },
+                      {
+                        "type": "null"
+                      }
+                    ]
+                  }
+                },
+                "required": ["votes", "weighted_score", "bayesian_score"],
+                "additionalProperties": false
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "plot_summary": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "total_chars": {
+            "type": "integer",
+            "minimum": -9007199254740991,
+            "maximum": 9007199254740991,
+            "description": "Length of the full plot summary."
+          },
+          "returned_chars": {
+            "type": "integer",
+            "minimum": -9007199254740991,
+            "maximum": 9007199254740991
+          },
+          "offset": {
+            "type": "integer",
+            "minimum": -9007199254740991,
+            "maximum": 9007199254740991
+          },
+          "next_offset": {
+            "anyOf": [
+              {
+                "type": "integer",
+                "minimum": -9007199254740991,
+                "maximum": 9007199254740991
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "Pass as 'offset' to read the rest."
+          },
+          "truncated": {
+            "type": "boolean"
+          },
+          "cast": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "role": {
+                  "type": "string"
+                },
+                "person": {
+                  "type": "string"
+                },
+                "person_id": {
+                  "anyOf": [
+                    {
+                      "type": "integer",
+                      "minimum": -9007199254740991,
+                      "maximum": 9007199254740991
+                    },
+                    {
+                      "type": "null"
+                    }
+                  ]
+                },
+                "lang": {
+                  "anyOf": [
+                    {
+                      "type": "string"
+                    },
+                    {
+                      "type": "null"
+                    }
+                  ],
+                  "description": "Language of this credit, such as 'JA' for the Japanese cast of a Japanese production or 'FR' for the French dub. Null when the site records none, which is not a claim that the credit is the original one."
+                }
+              },
+              "required": ["role", "person", "person_id", "lang"],
+              "additionalProperties": false
+            }
+          },
+          "cast_languages": {
+            "description": "Every language the site records a cast in, with its full credit count, so a trimmed 'cast' still shows what exists. Ask again with a narrower question if a language you need was cut.",
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "lang": {
+                  "anyOf": [
+                    {
+                      "type": "string"
+                    },
+                    {
+                      "type": "null"
+                    }
+                  ]
+                },
+                "credits": {
+                  "type": "integer",
+                  "minimum": -9007199254740991,
+                  "maximum": 9007199254740991
+                }
+              },
+              "required": ["lang", "credits"],
+              "additionalProperties": false
+            }
+          },
+          "staff": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "task": {
+                  "type": "string"
+                },
+                "person": {
+                  "type": "string"
+                },
+                "person_id": {
+                  "anyOf": [
+                    {
+                      "type": "integer",
+                      "minimum": -9007199254740991,
+                      "maximum": 9007199254740991
+                    },
+                    {
+                      "type": "null"
+                    }
+                  ]
+                }
+              },
+              "required": ["task", "person", "person_id"],
+              "additionalProperties": false
+            }
+          },
+          "companies": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "task": {
+                  "type": "string"
+                },
+                "company": {
+                  "type": "string"
+                },
+                "company_id": {
+                  "anyOf": [
+                    {
+                      "type": "integer",
+                      "minimum": -9007199254740991,
+                      "maximum": 9007199254740991
+                    },
+                    {
+                      "type": "null"
+                    }
+                  ]
+                }
+              },
+              "required": ["task", "company", "company_id"],
+              "additionalProperties": false
+            }
+          },
+          "episodes": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "num": {
+                  "type": "string"
+                },
+                "title": {
+                  "anyOf": [
+                    {
+                      "type": "string"
+                    },
+                    {
+                      "type": "null"
+                    }
+                  ]
+                },
+                "lang": {
+                  "anyOf": [
+                    {
+                      "type": "string"
+                    },
+                    {
+                      "type": "null"
+                    }
+                  ]
+                }
+              },
+              "required": ["num", "title", "lang"],
+              "additionalProperties": false
+            }
+          },
+          "releases": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "name": {
+                  "type": "string"
+                },
+                "date": {
+                  "anyOf": [
+                    {
+                      "type": "string"
+                    },
+                    {
+                      "type": "null"
+                    }
+                  ]
+                },
+                "href": {
+                  "anyOf": [
+                    {
+                      "type": "string"
+                    },
+                    {
+                      "type": "null"
+                    }
+                  ]
+                }
+              },
+              "required": ["name", "date", "href"],
+              "additionalProperties": false
+            }
+          },
+          "related": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "id": {
+                  "type": "integer",
+                  "minimum": -9007199254740991,
+                  "maximum": 9007199254740991
+                },
+                "relation": {
+                  "type": "string"
+                },
+                "direction": {
+                  "type": "string",
+                  "enum": ["prev", "next"],
+                  "description": "'prev' is what this came from, 'next' what came out of it."
+                }
+              },
+              "required": ["id", "relation", "direction"],
+              "additionalProperties": false
+            }
+          },
+          "news": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "title": {
+                  "type": "string"
+                },
+                "href": {
+                  "type": "string"
+                },
+                "date": {
+                  "anyOf": [
+                    {
+                      "type": "string"
+                    },
+                    {
+                      "type": "null"
+                    }
+                  ]
+                }
+              },
+              "required": ["title", "href", "date"],
+              "additionalProperties": false
+            }
+          },
+          "reviews": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "title": {
+                  "type": "string"
+                },
+                "href": {
+                  "type": "string"
+                },
+                "date": {
+                  "anyOf": [
+                    {
+                      "type": "string"
+                    },
+                    {
+                      "type": "null"
+                    }
+                  ]
+                }
+              },
+              "required": ["title", "href", "date"],
+              "additionalProperties": false
+            }
+          },
+          "notes": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          }
+        },
+        "required": [
+          "title",
+          "alt_titles",
+          "genres",
+          "themes",
+          "episode_count",
+          "running_time",
+          "objectionable_content",
+          "official_websites",
+          "picture_url",
+          "opening_themes",
+          "ending_themes",
+          "ratings",
+          "plot_summary",
+          "total_chars",
+          "returned_chars",
+          "offset",
+          "next_offset",
+          "truncated",
+          "notes"
+        ],
+        "$schema": "http://json-schema.org/draft-07/schema#",
+        "additionalProperties": false
+      },
+      "annotations": {
+        "readOnlyHint": true,
+        "destructiveHint": false,
+        "idempotentHint": true,
+        "openWorldHint": true
+      },
+      "execution": {
+        "taskSupport": "forbidden"
+      }
+    },
+    {
+      "name": "list_recent",
+      "title": "List recent or browse alphabetically",
+      "description": "List what was added to the Anime News Network encyclopedia most recently: anime, manga, people or companies. Pass 'starts_with' to browse titles alphabetically instead, which only applies to anime and manga. Rows carry an id you can pass to get_title when the kind is anime or manga. This is a listing, not a search: use search_titles when you know what you are looking for.",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "kind": {
+            "default": "anime",
+            "description": "Which catalogue to list.",
+            "type": "string",
+            "enum": ["anime", "manga", "person", "company"]
+          },
+          "starts_with": {
+            "description": "Single letter. Switches to an alphabetical browse of titles. Anime and manga only.",
+            "type": "string",
+            "maxLength": 1
+          },
+          "limit": {
+            "default": 20,
+            "description": "How many rows to return.",
+            "type": "integer",
+            "minimum": 1,
+            "maximum": 50
+          },
+          "offset": {
+            "default": 0,
+            "description": "How many rows to skip, for paging.",
+            "type": "integer",
+            "minimum": 0,
+            "maximum": 9007199254740991
+          }
+        },
+        "$schema": "http://json-schema.org/draft-07/schema#",
+        "additionalProperties": false
+      },
+      "outputSchema": {
+        "type": "object",
+        "properties": {
+          "kind": {
+            "type": "string"
+          },
+          "mode": {
+            "type": "string",
+            "enum": ["recent", "browse"],
+            "description": "'recent' is by date added, 'browse' is alphabetical."
+          },
+          "rows": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "id": {
+                  "anyOf": [
+                    {
+                      "type": "integer",
+                      "minimum": -9007199254740991,
+                      "maximum": 9007199254740991
+                    },
+                    {
+                      "type": "null"
+                    }
+                  ]
+                },
+                "kind": {
+                  "anyOf": [
+                    {
+                      "type": "string",
+                      "enum": ["anime", "manga", "person", "company"]
+                    },
+                    {
+                      "type": "null"
+                    }
+                  ]
+                },
+                "name": {
+                  "type": "string"
+                },
+                "type": {
+                  "anyOf": [
+                    {
+                      "type": "string"
+                    },
+                    {
+                      "type": "null"
+                    }
+                  ]
+                },
+                "precision": {
+                  "anyOf": [
+                    {
+                      "type": "string"
+                    },
+                    {
+                      "type": "null"
+                    }
+                  ]
+                },
+                "vintage": {
+                  "anyOf": [
+                    {
+                      "type": "string"
+                    },
+                    {
+                      "type": "null"
+                    }
+                  ]
+                },
+                "date_added": {
+                  "anyOf": [
+                    {
+                      "type": "string"
+                    },
+                    {
+                      "type": "null"
+                    }
+                  ]
+                },
+                "source_url": {
+                  "anyOf": [
+                    {
+                      "type": "string"
+                    },
+                    {
+                      "type": "null"
+                    }
+                  ]
+                }
+              },
+              "required": [
+                "id",
+                "kind",
+                "name",
+                "type",
+                "precision",
+                "vintage",
+                "date_added",
+                "source_url"
+              ],
+              "additionalProperties": false
+            }
+          },
+          "offset": {
+            "type": "integer",
+            "minimum": -9007199254740991,
+            "maximum": 9007199254740991
+          },
+          "next_offset": {
+            "anyOf": [
+              {
+                "type": "integer",
+                "minimum": -9007199254740991,
+                "maximum": 9007199254740991
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "Pass as 'offset' for the next page. Null when the last page came back short."
+          },
+          "notes": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          }
+        },
+        "required": ["kind", "mode", "rows", "offset", "next_offset", "notes"],
+        "$schema": "http://json-schema.org/draft-07/schema#",
+        "additionalProperties": false
+      },
+      "annotations": {
+        "readOnlyHint": true,
+        "destructiveHint": false,
+        "idempotentHint": true,
+        "openWorldHint": true
+      },
+      "execution": {
+        "taskSupport": "forbidden"
+      }
+    },
+    {
+      "name": "get_news",
+      "title": "Read the news wire",
+      "description": "Read the latest Anime News Network stories from their RSS feeds. 'all' mixes news, reviews and features; 'news' and 'reviews' are the narrower feeds. Filter with 'category' to keep only stories the feed tags a given way, such as Manga or Anime. The feed is the whole window available: there is no way to reach older stories through this tool. When you repeat a story, cite Anime News Network and link the article.",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "feed": {
+            "default": "all",
+            "description": "Which feed to read. 'all' is the busiest.",
+            "type": "string",
+            "enum": ["all", "news", "reviews"]
+          },
+          "edition": {
+            "default": "us",
+            "description": "Regional edition. They differ mostly in release and licensing coverage.",
+            "type": "string",
+            "enum": ["us", "uk", "au"]
+          },
+          "category": {
+            "description": "Keep only items tagged this way, matched case-insensitively.",
+            "type": "string"
+          },
+          "limit": {
+            "default": 20,
+            "description": "How many stories to return.",
+            "type": "integer",
+            "minimum": 1,
+            "maximum": 100
+          }
+        },
+        "$schema": "http://json-schema.org/draft-07/schema#",
+        "additionalProperties": false
+      },
+      "outputSchema": {
+        "type": "object",
+        "properties": {
+          "feed": {
+            "type": "string"
+          },
+          "edition": {
+            "type": "string"
+          },
+          "items": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "title": {
+                  "type": "string"
+                },
+                "link": {
+                  "type": "string",
+                  "description": "Article URL. Show this when citing the story."
+                },
+                "summary": {
+                  "anyOf": [
+                    {
+                      "type": "string"
+                    },
+                    {
+                      "type": "null"
+                    }
+                  ]
+                },
+                "published_at": {
+                  "anyOf": [
+                    {
+                      "type": "string"
+                    },
+                    {
+                      "type": "null"
+                    }
+                  ],
+                  "description": "ISO 8601 when the feed date could be parsed."
+                },
+                "category": {
+                  "anyOf": [
+                    {
+                      "type": "string"
+                    },
+                    {
+                      "type": "null"
+                    }
+                  ]
+                }
+              },
+              "required": ["title", "link", "summary", "published_at", "category"],
+              "additionalProperties": false
+            }
+          },
+          "total_available": {
+            "type": "integer",
+            "minimum": -9007199254740991,
+            "maximum": 9007199254740991,
+            "description": "Items in the feed after 'category' was applied, before 'limit'."
+          },
+          "notes": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          }
+        },
+        "required": ["feed", "edition", "items", "total_available", "notes"],
+        "$schema": "http://json-schema.org/draft-07/schema#",
+        "additionalProperties": false
+      },
+      "annotations": {
+        "readOnlyHint": true,
+        "destructiveHint": false,
+        "idempotentHint": true,
+        "openWorldHint": true
+      },
+      "execution": {
+        "taskSupport": "forbidden"
+      }
+    }
+  ],
+  "version": "2.0.1"
+}
