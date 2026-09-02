@@ -79,7 +79,7 @@
   ],
   "dependencies": {
     "@modelcontextprotocol/sdk": "^1.30.0",
-    "@rgrove/parse-xml": "^4.2.3",
+    "@rgrove/parse-xml": "^5.0.0",
     "zod": "^4.5.4"
   },
   "devDependencies": {
