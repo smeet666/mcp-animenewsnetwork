@@ -73,12 +73,12 @@ describe("fetchText", () => {
       expect(limiter.currentIntervalMs, "the client did not slow down").toBeGreaterThan(10);
     });
 
-    it("treats an empty body as the refusal it is", async () => {
+    it("reports an empty body as a network failure", async () => {
       // A stressed CDN answers 200 with nothing. Parsing that would read as
-      // "this title does not exist".
+      // "this title does not exist", and the site sent no refusal to report.
       const stub = makeFetch(() => xmlResponse("   "));
       await expect(fetchText(URL, { ...deps(), fetchImpl: stub.impl })).rejects.toMatchObject({
-        code: "rate_limited",
+        code: "network_error",
       });
     });
 

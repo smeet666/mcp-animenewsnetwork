@@ -49,6 +49,7 @@ export const getTitleDescription = [
   "Read one Anime News Network encyclopedia entry by id.",
   "Get the id and kind from search_titles first.",
   "Sections are opt-in because a full record is very large: ask only for what you need.",
+  "The entry's name, kind, id and link come back whatever you ask for, so any answer can be cited.",
   "'basic' covers type, vintage, genres, themes, episode count, ratings and the plot summary.",
   "Long plot summaries are paginated: when 'truncated' is true, call again with 'offset' set to 'next_offset'.",
 ].join(" ");
@@ -126,29 +127,35 @@ const linkedSchema = z.object({
 
 export const getTitleOutputShape = {
   title: titleSummarySchema,
-  alt_titles: z.array(z.string()),
-  genres: z.array(z.string()),
-  themes: z.array(z.string()),
-  episode_count: z.string().nullable(),
-  running_time: z.string().nullable(),
-  objectionable_content: z.string().nullable(),
-  official_websites: z.array(z.string()),
-  picture_url: z.string().nullable(),
-  opening_themes: z.array(z.string()),
-  ending_themes: z.array(z.string()),
+  alt_titles: z.array(z.string()).optional(),
+  genres: z.array(z.string()).optional(),
+  themes: z.array(z.string()).optional(),
+  episode_count: z.string().nullable().optional(),
+  running_time: z.string().nullable().optional(),
+  objectionable_content: z.string().nullable().optional(),
+  official_websites: z.array(z.string()).optional(),
+  picture_url: z.string().nullable().optional(),
+  opening_themes: z.array(z.string()).optional(),
+  ending_themes: z.array(z.string()).optional(),
   ratings: z
     .object({
       votes: z.number().int().nullable(),
       weighted_score: z.number().nullable(),
       bayesian_score: z.number().nullable(),
     })
-    .nullable(),
-  plot_summary: z.string().nullable(),
-  total_chars: z.number().int().describe("Length of the full plot summary."),
-  returned_chars: z.number().int(),
-  offset: z.number().int(),
-  next_offset: z.number().int().nullable().describe("Pass as 'offset' to read the rest."),
-  truncated: z.boolean(),
+    .nullable()
+    .optional(),
+  plot_summary: z.string().nullable().optional(),
+  total_chars: z.number().int().describe("Length of the full plot summary.").optional(),
+  returned_chars: z.number().int().optional(),
+  offset: z.number().int().optional(),
+  next_offset: z
+    .number()
+    .int()
+    .nullable()
+    .describe("Pass as 'offset' to read the rest.")
+    .optional(),
+  truncated: z.boolean().optional(),
   cast: z.array(castSchema).optional(),
   cast_languages: z
     .array(z.object({ lang: z.string().nullable(), credits: z.number().int() }))
@@ -184,48 +191,35 @@ export async function runGetTitle(client: AnnClient, args: GetTitleArgs): Promis
       notes.push("Served from this server's short-lived in-memory cache.");
     }
 
-    const fullSummary = data.plotSummary ?? "";
+    // The entry's own fields are a section like any other, so the summary is
+    // read, paged and described only for a caller who asked for them.
+    const basic = wanted.has("basic");
+    const fullSummary = basic ? (data.plotSummary ?? "") : "";
     const { slice, nextOffset } = sliceAtLineBoundary(fullSummary, args.offset, args.max_chars);
-    if (nextOffset !== null) {
+    if (basic && nextOffset !== null) {
       notes.push(
         `The plot summary is longer than ${args.max_chars} characters. Call again with offset=${nextOffset} for the rest.`,
       );
     }
     // Silence here would look like "this entry has no summary", when the real
     // answer is that the offset asked for is past the end of one that exists.
-    if (slice === "" && args.offset > 0 && fullSummary.length > 0) {
+    if (basic && slice === "" && args.offset > 0 && fullSummary.length > 0) {
       notes.push(
         `offset=${args.offset} is past the end of a plot summary of ${fullSummary.length} characters. Call again with offset=0 to read it from the start.`,
       );
     }
 
+    // The entry's name and its link travel with every answer: they are what a
+    // caller cites, and an answer nobody can attribute is worth less than the
+    // request that fetched it.
     const structured: Record<string, unknown> = {
       title: toTitleSummaryOut(data),
-      alt_titles: data.altTitles,
-      genres: data.genres,
-      themes: data.themes,
-      episode_count: data.episodeCount,
-      running_time: data.runningTime,
-      objectionable_content: data.objectionableContent,
-      official_websites: data.officialWebsites,
-      picture_url: data.pictureUrl,
-      opening_themes: data.openingThemes,
-      ending_themes: data.endingThemes,
-      ratings: data.ratings
-        ? {
-            votes: data.ratings.votes,
-            weighted_score: data.ratings.weightedScore,
-            bayesian_score: data.ratings.bayesianScore,
-          }
-        : null,
-      plot_summary: slice === "" ? null : slice,
-      total_chars: fullSummary.length,
-      returned_chars: slice.length,
-      offset: args.offset,
-      next_offset: nextOffset,
-      truncated: nextOffset !== null,
       notes,
     };
+
+    if (basic) {
+      Object.assign(structured, basicFields(data, args, { slice, nextOffset, fullSummary }));
+    }
 
     if (wanted.has("cast")) {
       const kept = capCastAcrossLanguages(data.cast, CAPS.cast, notes);
@@ -265,14 +259,7 @@ export async function runGetTitle(client: AnnClient, args: GetTitleArgs): Promis
       structured.reviews = capped(data.reviews, CAPS.reviews, "linked reviews", notes);
     }
 
-    for (const section of wanted) {
-      const value = structured[section === "staff" ? "staff" : section];
-      if (Array.isArray(value) && value.length === 0) {
-        notes.push(
-          `Anime News Network lists no ${section} for this entry, so the empty list is an absence rather than a failure to read it.`,
-        );
-      }
-    }
+    notes.push(...emptinessNotes(wanted, structured));
 
     return ok(structured, renderSummary(data, slice, wanted, structured), {
       notes,
@@ -382,28 +369,41 @@ function renderEpisodes(structured: Record<string, unknown>): string[] {
  *
  * A text-only client that reads a promise of a section has paid a request for
  * nothing, so a section with rows is written out and one without is left off.
+ * Each section is written from the fields its own rows carry, and a row that
+ * holds an address ends on it, so a reader can open the page and credit the
+ * site by it.
  */
 function renderListedSections(structured: Record<string, unknown>, wanted: Set<string>): string[] {
   const lines: string[] = [];
 
-  for (const [section, label] of [
-    ["releases", "Releases"],
-    ["related", "Related"],
-    ["news", "News"],
-    ["reviews", "Reviews"],
-  ] as const) {
-    const rows = (structured[section] ?? []) as Record<string, unknown>[];
-    if (!wanted.has(section) || rows.length === 0) {
-      continue;
+  const section = <Row>(name: string, label: string, renderRow: (row: Row) => string): void => {
+    const rows = (structured[name] ?? []) as Row[];
+    if (!wanted.has(name) || rows.length === 0) {
+      return;
     }
+    lines.push("", `${label}:`, ...rows.map((row) => `  ${renderRow(row)}`));
+  };
 
-    lines.push("", `${label}:`);
-    for (const row of rows) {
-      const title = (row.title ?? row.name ?? row.story ?? "") as string;
-      const link = (row.link ?? row.url ?? row.sourceUrl ?? "") as string;
-      lines.push(`  ${title || JSON.stringify(row)}${link ? ` — ${link}` : ""}`);
-    }
-  }
+  const renderLinked = (row: z.infer<typeof linkedSchema>): string =>
+    [row.title, row.date, row.href].filter(Boolean).join(" · ");
+
+  section<z.infer<typeof releaseSchema>>("releases", "Releases", (row) =>
+    [row.name, row.date, row.href].filter(Boolean).join(" · "),
+  );
+  // A related row states an id and the side it sits on, and the site states
+  // nothing about the catalogue that holds that id. Anime ids and manga ids
+  // share one integer range, so an address built here would name a catalogue
+  // by guessing, and it would reach an unrelated entry or nothing at all. The
+  // id is printed for a caller to resolve.
+  section<z.infer<typeof relatedSchema>>("related", "Related", (row) =>
+    [
+      row.relation,
+      row.direction === "prev" ? "this entry came from it" : "came out of this entry",
+      `id: ${row.id}`,
+    ].join(" · "),
+  );
+  section<z.infer<typeof linkedSchema>>("news", "News", renderLinked);
+  section<z.infer<typeof linkedSchema>>("reviews", "Reviews", renderLinked);
 
   return lines;
 }
@@ -423,20 +423,24 @@ function renderSummary(
     .join(" ");
 
   const lines = [header];
-  if (data.genres.length > 0) {
-    lines.push(`Genres: ${data.genres.join(", ")}`);
-  }
-  if (data.themes.length > 0) {
-    lines.push(`Themes: ${data.themes.join(", ")}`);
-  }
-  if (data.episodeCount) {
-    lines.push(`Episodes: ${data.episodeCount}`);
-  }
-  if (data.ratings?.weightedScore !== null && data.ratings?.weightedScore !== undefined) {
-    lines.push(`Rating: ${data.ratings.weightedScore} from ${data.ratings.votes ?? "?"} votes`);
-  }
-  if (plot) {
-    lines.push("", plot);
+  // The block mirrors the payload, so a field the payload withholds is absent
+  // here as well: printing it would withhold nothing.
+  if (wanted.has("basic")) {
+    if (data.genres.length > 0) {
+      lines.push(`Genres: ${data.genres.join(", ")}`);
+    }
+    if (data.themes.length > 0) {
+      lines.push(`Themes: ${data.themes.join(", ")}`);
+    }
+    if (data.episodeCount) {
+      lines.push(`Episodes: ${data.episodeCount}`);
+    }
+    if (data.ratings?.weightedScore !== null && data.ratings?.weightedScore !== undefined) {
+      lines.push(`Rating: ${data.ratings.weightedScore} from ${data.ratings.votes ?? "?"} votes`);
+    }
+    if (plot) {
+      lines.push("", plot);
+    }
   }
 
   // A section is printed, not announced: a text-only client that reads the
@@ -454,4 +458,63 @@ function renderSummary(
   lines.push(...renderListedSections(structured, wanted));
 
   return lines.join("\n");
+}
+
+/** Everything the 'basic' section covers, including the slice of the summary. */
+function basicFields(
+  data: TitleDetail,
+  args: GetTitleArgs,
+  summary: { slice: string; nextOffset: number | null; fullSummary: string },
+): Record<string, unknown> {
+  return {
+    alt_titles: data.altTitles,
+    genres: data.genres,
+    themes: data.themes,
+    episode_count: data.episodeCount,
+    running_time: data.runningTime,
+    objectionable_content: data.objectionableContent,
+    official_websites: data.officialWebsites,
+    picture_url: data.pictureUrl,
+    opening_themes: data.openingThemes,
+    ending_themes: data.endingThemes,
+    ratings: data.ratings
+      ? {
+          votes: data.ratings.votes,
+          weighted_score: data.ratings.weightedScore,
+          bayesian_score: data.ratings.bayesianScore,
+        }
+      : null,
+    plot_summary: summary.slice === "" ? null : summary.slice,
+    total_chars: summary.fullSummary.length,
+    returned_chars: summary.slice.length,
+    offset: args.offset,
+    next_offset: summary.nextOffset,
+    truncated: summary.nextOffset !== null,
+  };
+}
+
+/**
+ * What an answer holding little needs to say about why.
+ *
+ * An empty list and a section nobody asked for look alike once the answer is
+ * written, and a model reading either one without a word reports that the
+ * encyclopedia holds nothing.
+ */
+function emptinessNotes(wanted: Set<string>, structured: Record<string, unknown>): string[] {
+  if (wanted.size === 0) {
+    return [
+      "'sections' was empty, so this answer carries the entry and its link. Ask for 'basic' to read what the encyclopedia says about it.",
+    ];
+  }
+
+  const notes: string[] = [];
+  for (const section of wanted) {
+    const value = structured[section];
+    if (Array.isArray(value) && value.length === 0) {
+      notes.push(
+        `Anime News Network lists no ${section} for this entry, so the empty list is an absence rather than a failure to read it.`,
+      );
+    }
+  }
+  return notes;
 }

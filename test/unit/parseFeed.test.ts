@@ -14,19 +14,19 @@ describe("parseFeed", () => {
   const items = parseFeed(feed, URL);
 
   it("returns one item per entry in the channel", () => {
-    expect(items).toHaveLength(6);
+    expect(items).toHaveLength(8);
   });
 
-  it("reads the title, link and category of an item", () => {
+  it("reads the title, link and tags of an item", () => {
     expect(items[0]).toMatchObject({
       title: "Placeholder Wire Story 1",
       link: "https://www.animenewsnetwork.com/news/2026-08-03/placeholder-story-1",
-      category: "Manga",
+      categories: ["Manga"],
     });
   });
 
-  it("reports a missing category as null rather than as an empty string", () => {
-    expect(items[2]?.category).toBeNull();
+  it("reports a story the wire tagged nowhere as an empty list of tags", () => {
+    expect(items[2]?.categories).toEqual([]);
   });
 
   it("ignores the item fields it does not know", () => {

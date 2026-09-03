@@ -1,6 +1,6 @@
 {
   "name": "mcp-animenewsnetwork",
-  "version": "2.0.1",
+  "version": "3.0.0",
   "description": "MCP server for Anime News Network. Search the anime and manga encyclopedia, read cast, staff and episodes, and follow the news wire. No API key required.",
   "type": "module",
   "license": "MIT",
@@ -53,6 +53,7 @@
     "test:live": "vitest run test/live --testTimeout=60000",
     "build:fixtures": "node scripts/build-fixtures.mjs",
     "build:manifest": "npm run build && node scripts/build-manifest-tools.mjs",
+    "build:plugin": "npm run build && node scripts/build-plugin-tools.mjs",
     "format": "biome check --write && prettier --write \"**/*.{md,yml}\"",
     "check": "biome ci && prettier --check \"**/*.{md,yml}\"",
     "prepublishOnly": "npm run typecheck && npm run test && npm run build",

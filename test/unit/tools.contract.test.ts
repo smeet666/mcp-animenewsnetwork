@@ -259,10 +259,10 @@ describe("get_news", () => {
   it("keeps only the stories tagged with the requested category", async () => {
     const client = await connect(fixtureRouter().impl);
     const result = await call(client, "get_news", { category: "anime" });
-    const items = (result.structuredContent as { items: { category: string }[] }).items;
+    const items = (result.structuredContent as { items: { categories: string[] }[] }).items;
     expect(items.length).toBeGreaterThan(0);
     for (const item of items) {
-      expect(item.category).toBe("Anime");
+      expect(item.categories).toContain("Anime");
     }
   });
 

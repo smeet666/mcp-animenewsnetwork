@@ -82,6 +82,33 @@ function heavyChildren(seed) {
  * `attrs` and `extra` exist so a fixture can drop an attribute the parser needs
  * or add a section only one fixture cares about.
  */
+/**
+ * Heavy children each broken one way, alongside one that is whole.
+ *
+ * The site publishes records with a credit missing its role, an episode with no
+ * number, a linked article with no address. A parser that drops the record over
+ * one of them answers that the entry has no cast at all, so each is dropped on
+ * its own and the rest of the section survives.
+ */
+function brokenChildren(seed) {
+  return [
+    `<cast gid="210"><person id="1${seed}">Nameless Role ${HEAVY_MARKERS.castPerson}</person></cast>`,
+    `<cast gid="211"><role>${HEAVY_MARKERS.castRole} Unattributed</role></cast>`,
+    `<staff gid="206"><task>Storyboard</task></staff>`,
+    `<staff gid="207"><person id="2${seed}">Taskless ${HEAVY_MARKERS.staffPerson}</person></staff>`,
+    `<credit gid="378"><task>Production</task></credit>`,
+    `<episode><title gid="126" lang="EN">${HEAVY_MARKERS.episodeTitle} Unnumbered</title></episode>`,
+    `<release date="2015-01-01">Placeholder Release With No Address</release>`,
+    `<release href="${SITE}/encyclopedia/releases.php?id=1">   </release>`,
+    `<news datetime="1999-01-01T00:00:00Z">${HEAVY_MARKERS.newsHeadline} With No Address</news>`,
+    `<review href="${SITE}/review/nameless"></review>`,
+    `<related-next rel="alternate version"/>`,
+    `<related-prev id="9998"/>`,
+    `<info gid="442" type="Genres"></info>`,
+    `<info gid="249" type="Picture" width="10" height="10"/>`,
+  ].join("\n  ");
+}
+
 function record(options) {
   const {
     element = "anime",
@@ -93,6 +120,7 @@ function record(options) {
     vintage = "1998-04-03",
     withAttrs = true,
     heavy = true,
+    broken = false,
   } = options;
 
   const attrs = [
@@ -125,7 +153,7 @@ function record(options) {
   <info gid="7" type="Objectionable content">Mild</info>
   <info gid="8" type="Opening Theme">"Placeholder Opening Song ${seed}"</info>
   <info gid="9" type="Ending Theme">"Placeholder Ending Song ${seed}"</info>
-  ${heavy ? heavyChildren(seed) : ""}
+  ${heavy ? heavyChildren(seed) : ""}${broken ? `\n  ${brokenChildren(seed)}` : ""}
 </${element}>`;
 }
 
@@ -133,15 +161,26 @@ function ann(body) {
   return `<?xml version="1.0" encoding="UTF-8"?>\n<ann>\n${body}\n</ann>\n`;
 }
 
-/** Shape A: report 155, which lists titles with their fields as elements. */
-function titleListItem(seed) {
+/**
+ * Shape A: report 155, which lists titles with their fields as elements.
+ *
+ * `type` carries the site's own editorial label, which is hand-maintained and
+ * open-ended. Passing `null` for it writes an item with no `<type>` element at
+ * all, which covers a shape the parser has to tolerate.
+ */
+function titleListItem(seed, overrides = {}) {
+  const {
+    type = seed % 2 === 0 ? "manga" : "TV",
+    precision = seed % 2 === 0 ? "manga" : `TV ${seed}`,
+  } = overrides;
+
   return `<item>
     <id>${40_400 + seed}</id>
-    <gid>383109600${seed}</gid>
-    <type>${seed % 2 === 0 ? "manga" : "TV"}</type>
+    <gid>${3_831_096_000 + seed}</gid>
+    ${type === null ? "" : `<type>${type}</type>`}
     <name>Placeholder Listed Title ${seed}</name>
-    <precision>${seed % 2 === 0 ? "manga" : `TV ${seed}`}</precision>
-    <vintage>2026-08-0${seed}</vintage>
+    <precision>${precision}</precision>
+    <vintage>2026-08-${String(seed).padStart(2, "0")}</vintage>
     <unknown-column>noise the parser must ignore</unknown-column>
   </item>`;
 }
@@ -170,6 +209,15 @@ const MARKUP_DESCRIPTION =
 
 const MARKUP_ONLY_DESCRIPTION = "&lt;p&gt;&lt;/p&gt;  \n  &lt;br/&gt;";
 
+/** The wire tags a story with as many categories as it likes, or with none. */
+function categoryElements(category) {
+  if (category === null) {
+    return "";
+  }
+  const names = Array.isArray(category) ? category : [category];
+  return names.map((name) => `<category>${name}</category>`).join("\n      ");
+}
+
 function feedItem(options) {
   const {
     seed = 1,
@@ -185,7 +233,7 @@ function feedItem(options) {
       <guid isPermaLink="true">${link}</guid>
       <description>${description}</description>
       <pubDate>${pubDate}</pubDate>
-      ${category === null ? "" : `<category>${category}</category>`}
+      ${categoryElements(category)}
       <dc:creator>Placeholder Reporter</dc:creator>
       <unknown-item-field>noise the parser must ignore</unknown-item-field>
     </item>`;
@@ -230,6 +278,30 @@ const FIXTURES = {
     ].join("\n"),
   ),
 
+  /**
+   * A name search the encyclopedia answers entirely from one catalogue.
+   *
+   * Restricting such an answer to the other catalogue leaves nothing, and the
+   * absence is the server's own doing. The fixture exists so a tool can be held
+   * to saying which of the two emptied the set.
+   */
+  "search-results-anime-only.xml": ann(
+    [
+      record({ seed: 1, heavy: false }),
+      record({ seed: 2, type: "OAV", precision: "OAV", heavy: false }),
+      record({ seed: 4, type: "movie", precision: "movie", heavy: false }),
+    ].join("\n"),
+  ),
+
+  /**
+   * A record whose heavy children are each unreadable in one way.
+   *
+   * One broken credit is not a broken record: dropping the entry over it would
+   * answer that the title has no cast, which is a different fact from the one
+   * the site published.
+   */
+  "title-broken-children.xml": ann(record({ seed: 1, broken: true })),
+
   /** A record with neither an id nor a name, alongside one that is complete. */
   "title-missing-attrs.xml": ann(
     [
@@ -252,7 +324,50 @@ const FIXTURES = {
   "warning-ignored.xml": ann("<warning>ignored </warning>"),
 
   /** Report 155: titles with their fields as child elements. */
-  "report-title-list.xml": report([1, 2, 3, 4, 5].map(titleListItem)),
+  "report-title-list.xml": report([1, 2, 3, 4, 5].map((seed) => titleListItem(seed))),
+
+  /**
+   * Report 155 as the site answers it with `type=manga` in the query string.
+   *
+   * The site's filter is authoritative for every row it returns, while the
+   * `<type>` element carries an editorial label describing the format of the
+   * work. The two say different things: an anthology is served on the manga
+   * side, and so is a label belonging to no published vocabulary, since that
+   * vocabulary is open. Only the filter places that last row, which is what
+   * makes this fixture tell a filtered read apart from a label read.
+   */
+  "report-title-list-manga.xml": report([
+    titleListItem(1, { type: "manga", precision: "manga" }),
+    titleListItem(2, { type: "manga", precision: "manga" }),
+    titleListItem(3, { type: "anthology", precision: "anthology" }),
+    titleListItem(4, { type: "manga", precision: "manga" }),
+    titleListItem(5, { type: "hypothetical-format", precision: "hypothetical-format" }),
+  ]),
+
+  /**
+   * Report 155 as the site answers it with no type in the query string, where
+   * the two catalogues arrive mixed and the `<type>` element is the only hint.
+   *
+   * The eight labels observed on the live report are here, six on the anime
+   * side and two on the manga side. The last two items carry what the label
+   * cannot answer: a value belonging to no known list, and no element at all.
+   * "hypothetical-format" is deliberately not a word the site writes, so a
+   * reader cannot mistake it for a vocabulary entry to add somewhere. A third
+   * unanswerable row carries the element with nothing inside it.
+   */
+  "report-title-list-mixed.xml": report([
+    titleListItem(1, { type: "TV", precision: "TV 1" }),
+    titleListItem(2, { type: "movie", precision: "movie" }),
+    titleListItem(3, { type: "ONA", precision: "ONA" }),
+    titleListItem(4, { type: "OAV", precision: "OAV 2" }),
+    titleListItem(5, { type: "special", precision: "special" }),
+    titleListItem(6, { type: "omnibus", precision: "omnibus" }),
+    titleListItem(7, { type: "manga", precision: "manga" }),
+    titleListItem(8, { type: "anthology", precision: "anthology" }),
+    titleListItem(9, { type: "hypothetical-format", precision: "hypothetical-format" }),
+    titleListItem(10, { type: null, precision: "manga" }),
+    titleListItem(11, { type: "", precision: "TV 11" }),
+  ]),
 
   /** Report 148: recently added anime, where the id lives in the href. */
   "report-recent-anime.xml": report([1, 2, 3].map((seed) => recentItem("anime", seed))),
@@ -302,8 +417,9 @@ const FIXTURES = {
 `,
 
   /**
-   * A feed with a well-formed date, an unparseable one, a missing category and
-   * the escaped inline markup the live wire wraps titles in.
+   * A feed with a well-formed date, an unparseable one, a missing category, the
+   * escaped inline markup the live wire wraps titles in, and two stories the
+   * wire tags several ways at once, which it does for roughly one story in ten.
    */
   "feed.xml": rss(
     [
@@ -314,6 +430,26 @@ const FIXTURES = {
       feedItem({ seed: 4, pubDate: "sometime last Thursday" }),
       feedItem({ seed: 5, description: MARKUP_DESCRIPTION }),
       feedItem({ seed: 6, description: MARKUP_ONLY_DESCRIPTION }),
+      feedItem({ seed: 7, category: ["People", "Events"] }),
+      feedItem({ seed: 8, category: ["Anime", "Manga", "Events"] }),
+    ].join("\n"),
+  ),
+
+  /**
+   * A channel where two entries carry no link.
+   *
+   * A headline with no address cannot be attributed, so the entry is dropped,
+   * and the count of what was dropped is the difference between what the wire
+   * published and what a reader is shown.
+   */
+  "feed-partial.xml": rss(
+    [
+      CHANNEL_HEADER,
+      feedItem({ seed: 1 }),
+      feedItem({ seed: 2, link: "" }),
+      feedItem({ seed: 3, category: "Anime" }),
+      feedItem({ seed: 4, link: "" }),
+      feedItem({ seed: 5 }),
     ].join("\n"),
   ),
 

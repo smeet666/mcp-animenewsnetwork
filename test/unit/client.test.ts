@@ -136,4 +136,60 @@ describe("AnnClient report paging", () => {
     expect(page.data.rows).toHaveLength(5);
     expect(page.data.itemCount).toBe(5);
   });
+
+  it("files a browse of one catalogue entirely under that catalogue", async () => {
+    // The type in the query string is what the site filtered on, so every row
+    // it answers with belongs to that catalogue. The last row carries a label
+    // no published vocabulary holds, which the filter places and the label
+    // cannot: it is the row that proves the client hands the filter down to
+    // the parser.
+    const stub = fixtureRouter({
+      "reports.xml?id=155&nlist=5&type=manga": "report-title-list-manga.xml",
+    });
+    const client = new AnnClient({ config: testConfig(), logger, fetchImpl: stub.impl });
+
+    const page = await client.browseTitles({ limit: 5, offset: 0, type: "manga" });
+    const anthology = page.data.rows.find((row) => row.type === "anthology");
+    const unlisted = page.data.rows.find((row) => row.type === "hypothetical-format");
+
+    expect(page.data.rows.map((row) => row.kind)).toEqual([
+      "manga",
+      "manga",
+      "manga",
+      "manga",
+      "manga",
+    ]);
+    expect(anthology?.sourceUrl).toBe(
+      "https://www.animenewsnetwork.com/encyclopedia/manga.php?id=40403",
+    );
+    expect(unlisted?.sourceUrl).toBe(
+      "https://www.animenewsnetwork.com/encyclopedia/manga.php?id=40405",
+    );
+  });
+
+  it("reads the catalogue off each label when the browse named none", async () => {
+    // Without a type in the query string the site answers from both catalogues
+    // at once, and a label outside the vocabulary it publishes leaves the
+    // catalogue of that row unknown.
+    const stub = fixtureRouter({
+      "reports.xml?id=155&nlist=11": "report-title-list-mixed.xml",
+    });
+    const client = new AnnClient({ config: testConfig(), logger, fetchImpl: stub.impl });
+
+    const page = await client.browseTitles({ limit: 11, offset: 0 });
+
+    expect(page.data.rows.map((row) => row.kind)).toEqual([
+      "anime",
+      "anime",
+      "anime",
+      "anime",
+      "anime",
+      "anime",
+      "manga",
+      "manga",
+      null,
+      null,
+      null,
+    ]);
+  });
 });

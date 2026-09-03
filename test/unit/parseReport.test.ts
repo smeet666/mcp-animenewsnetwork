@@ -3,6 +3,8 @@ import { parseReport } from "../../src/ann/parseReport.js";
 import { expectAnnError, fixtureText } from "./_helpers.js";
 
 const titleList = fixtureText("report-title-list.xml");
+const mangaSideList = fixtureText("report-title-list-manga.xml");
+const mixedList = fixtureText("report-title-list-mixed.xml");
 const recentAnime = fixtureText("report-recent-anime.xml");
 const recentPerson = fixtureText("report-recent-person.xml");
 const partialReport = fixtureText("report-partial.xml");
@@ -14,6 +16,12 @@ const feed = fixtureText("feed.xml");
 const URL_TITLES = "https://cdn.animenewsnetwork.com/encyclopedia/reports.xml?id=155&nlist=5";
 const URL_RECENT = "https://cdn.animenewsnetwork.com/encyclopedia/reports.xml?id=148&nlist=3";
 const URL_PEOPLE = "https://cdn.animenewsnetwork.com/encyclopedia/reports.xml?id=150&nlist=2";
+const URL_TITLES_MANGA =
+  "https://cdn.animenewsnetwork.com/encyclopedia/reports.xml?id=155&nlist=4&type=manga";
+const URL_TITLES_MIXED =
+  "https://cdn.animenewsnetwork.com/encyclopedia/reports.xml?id=155&nlist=11";
+
+const SITE = "https://www.animenewsnetwork.com/encyclopedia";
 
 describe("parseReport", () => {
   describe("the title list shape, where every field is its own element", () => {
@@ -117,6 +125,169 @@ describe("parseReport", () => {
       // drift compounds over pages.
       expect(page.itemCount).toBe(3);
       expect(page.itemCount).toBeGreaterThan(page.rows.length);
+    });
+  });
+
+  describe("the title list shape, when the request named a catalogue", () => {
+    const { rows, itemCount } = parseReport(mangaSideList, URL_TITLES_MANGA, {
+      requestedKind: "manga",
+    });
+
+    it("files every row under the catalogue that was asked for", () => {
+      // The site's own filter decides which catalogue answers, and it returns
+      // nothing from the other one. That is a stronger statement about the row
+      // than the editorial label, which describes the format of the work.
+      expect(rows.map((row) => row.kind)).toEqual(["manga", "manga", "manga", "manga", "manga"]);
+      expect(itemCount).toBe(5);
+    });
+
+    it("leaves the catalogue unstated when the label names the other one", () => {
+      // reports.xml passes over a parameter it does not recognise, so a filter
+      // it stopped honouring would answer from both sides while every row still
+      // claimed the side that was asked for. A label naming the other catalogue
+      // is the only sign of that from inside one response.
+      const crossed = parseReport(mangaSideList, URL_TITLES_MANGA, { requestedKind: "anime" });
+      const labelledManga = crossed.rows.filter((row) => row.type === "manga");
+
+      expect(labelledManga.length).toBeGreaterThan(0);
+      for (const row of labelledManga) {
+        expect(row.kind, `row ${String(row.id)}`).toBeNull();
+        expect(row.sourceUrl, `row ${String(row.id)}`).toBeNull();
+      }
+    });
+
+    it("files a row whose label belongs to no vocabulary under it as well", () => {
+      // The labels are open, so the site can serve one this parser has never
+      // been shown. The request settles the catalogue on its own, which is
+      // what keeps such a row linkable.
+      const unlisted = rows.find((row) => row.type === "hypothetical-format");
+
+      expect(unlisted?.kind).toBe("manga");
+      expect(unlisted?.sourceUrl).toBe(`${SITE}/manga.php?id=40405`);
+    });
+
+    it("files a row the site labels anthology under the catalogue too", () => {
+      // An anthology is a manga the encyclopedia holds under manga.php. A row
+      // read as an anime instead points at an id the anime catalogue does not
+      // hold, and the reader who follows the link lands on nothing.
+      const anthology = rows.find((row) => row.type === "anthology");
+
+      expect(anthology?.kind).toBe("manga");
+      expect(anthology?.sourceUrl).toBe(`${SITE}/manga.php?id=40403`);
+    });
+
+    it("links every row into that catalogue", () => {
+      for (const row of rows) {
+        expect(row.sourceUrl, `row ${String(row.id)}`).toBe(
+          `${SITE}/manga.php?id=${String(row.id)}`,
+        );
+      }
+    });
+
+    it("holds the same trust the same way on the other side", () => {
+      // An anime-side answer carries anime ids, and its rows take that
+      // catalogue whether their label agrees or says nothing about it. A label
+      // naming the manga catalogue is the one case the request cannot settle.
+      const anime = parseReport(titleList, URL_TITLES, { requestedKind: "anime" });
+
+      expect(anime.rows.map((row) => row.kind)).toEqual(["anime", null, "anime", null, "anime"]);
+      expect(anime.rows[0]).toMatchObject({
+        type: "TV",
+        sourceUrl: `${SITE}/anime.php?id=40401`,
+      });
+      expect(anime.rows[1]).toMatchObject({ type: "manga", sourceUrl: null });
+    });
+
+    it("keeps the label the site published, whatever catalogue the row took", () => {
+      expect(rows.map((row) => row.type)).toEqual([
+        "manga",
+        "manga",
+        "anthology",
+        "manga",
+        "hypothetical-format",
+      ]);
+    });
+  });
+
+  describe("the title list shape, when the request named no catalogue", () => {
+    const { rows, itemCount } = parseReport(mixedList, URL_TITLES_MIXED);
+
+    it("reads the anime catalogue off the labels the site gives anime", () => {
+      // With both catalogues answering at once, the label is the only hint the
+      // row carries, and these six values are the ones the report writes on the
+      // anime side.
+      expect(rows.slice(0, 6).map((row) => [row.type, row.kind])).toEqual([
+        ["TV", "anime"],
+        ["movie", "anime"],
+        ["ONA", "anime"],
+        ["OAV", "anime"],
+        ["special", "anime"],
+        ["omnibus", "anime"],
+      ]);
+    });
+
+    it("reads the manga catalogue off the labels the site gives manga", () => {
+      expect(rows.slice(6, 8).map((row) => [row.type, row.kind])).toEqual([
+        ["manga", "manga"],
+        ["anthology", "manga"],
+      ]);
+    });
+
+    it("leaves the catalogue unknown when the label answers neither", () => {
+      // The label vocabulary is hand-maintained and open-ended, so a value
+      // outside the two lists is an ordinary event. Anime and manga ids share
+      // one integer range, and an id alone says nothing about which catalogue
+      // holds it, so there is nothing left to decide from.
+      expect(rows[8]).toMatchObject({ type: "hypothetical-format", kind: null });
+      expect(rows[9]).toMatchObject({ type: null, kind: null });
+      expect(rows[10]?.kind).toBeNull();
+    });
+
+    it("carries no link for a row whose catalogue is unknown", () => {
+      // A link built into a guessed namespace is a dead link that asserts a
+      // catalogue the data never stated.
+      for (const row of rows.slice(8)) {
+        expect(row.sourceUrl, `row ${String(row.id)}`).toBeNull();
+      }
+    });
+
+    it("reports a row whose catalogue is unknown with everything it does carry", () => {
+      // The name, the label, the precision and the vintage are all true of the
+      // row. Dropping it would hide an entry the site published.
+      expect(rows[8]).toMatchObject({
+        id: 40_409,
+        name: "Placeholder Listed Title 9",
+        type: "hypothetical-format",
+        precision: "hypothetical-format",
+        vintage: "2026-08-09",
+      });
+    });
+
+    it("counts a row whose catalogue is unknown as a row that was read", () => {
+      // Such a row parsed. Treating it as a failure would push a page of them
+      // into parse_failure and hide eleven entries the site did publish.
+      expect(rows).toHaveLength(11);
+      expect(itemCount).toBe(11);
+    });
+  });
+
+  describe("the catalogue a request names, against the other report shape", () => {
+    it("keeps reading the kind from the element that carries the href", () => {
+      // Reports 148 to 151 name the catalogue in the element itself, which is
+      // the row's own statement about what it is.
+      const people = parseReport(recentPerson, URL_PEOPLE, { requestedKind: "anime" });
+
+      for (const row of people.rows) {
+        expect(row.kind).toBe("person");
+        expect(row.sourceUrl).toBe(`${SITE}/person.php?id=${String(row.id)}`);
+      }
+    });
+
+    it("still fails a page where no item could be read", () => {
+      expectAnnError(
+        () => parseReport(unreadableReport, URL_TITLES, { requestedKind: "manga" }),
+        "parse_failure",
+      );
     });
   });
 

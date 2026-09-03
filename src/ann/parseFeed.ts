@@ -7,11 +7,11 @@
  */
 
 import { parseFailure } from "../errors.js";
-import type { NewsItem } from "../types.js";
+import type { NewsItem, OnSkip } from "../types.js";
 import { FEED_EL } from "./paths.js";
-import { children, childText, expectRoot, parseDocument } from "./xml.js";
+import { children, childText, expectRoot, parseDocument, textOf } from "./xml.js";
 
-export function parseFeed(xml: string, url: string): NewsItem[] {
+export function parseFeed(xml: string, url: string, onSkip?: OnSkip): NewsItem[] {
   const root = expectRoot(parseDocument(xml, url), FEED_EL.root, url);
 
   const channel = children(root, FEED_EL.channel)[0];
@@ -38,12 +38,19 @@ export function parseFeed(xml: string, url: string): NewsItem[] {
       link,
       summary: stripMarkup(childText(node, FEED_EL.description)),
       publishedAt: toIsoDate(childText(node, FEED_EL.pubDate)),
-      category: childText(node, FEED_EL.category),
+      categories: children(node, FEED_EL.category)
+        .map((element) => textOf(element))
+        .filter((name): name is string => name !== null),
     });
   }
 
   if (items.length === 0) {
     throw parseFailure(url, `${nodes.length} feed entries but none could be read`);
+  }
+
+  const skipped = nodes.length - items.length;
+  if (skipped > 0) {
+    onSkip?.(skipped, nodes.length);
   }
 
   return items;

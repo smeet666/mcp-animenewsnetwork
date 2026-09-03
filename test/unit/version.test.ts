@@ -1,10 +1,10 @@
 /**
  * One version number, in the files that publish it.
  *
- * The package, the registry descriptor, the extension manifest and the constant
- * the server reports all carry it, and each is read by someone different. Two of
- * them disagreeing leaves a host announcing one release while serving another's
- * file, and nothing on screen says so.
+ * The package, the registry descriptor, the extension manifest, the plugin
+ * manifest and the constant the server reports all carry it, and each is read by
+ * someone different. Two of them disagreeing leaves a host announcing one
+ * release while serving another's file, and nothing on screen says so.
  */
 
 import { readFileSync } from "node:fs";
@@ -19,6 +19,7 @@ const registry = JSON.parse(read("../../server.json")) as {
   packages: { registryType: string; version: string; identifier: string }[];
 };
 const manifest = JSON.parse(read("../../packaging/manifest.json")) as { version: string };
+const plugin = JSON.parse(read("../../lhm.plugin.json")) as { version: string };
 
 describe("the version number", () => {
   it("is the same in every file that carries it", () => {
@@ -29,6 +30,7 @@ describe("the version number", () => {
     expect(manifest.version, "packaging/manifest.json version left package.json").toBe(
       packaged.version,
     );
+    expect(plugin.version, "lhm.plugin.json version left package.json").toBe(packaged.version);
     expect(PKG_VERSION, "src/version.ts left package.json").toBe(packaged.version);
     expect(npmPackage?.version, "the npm package entry left package.json").toBe(packaged.version);
   });

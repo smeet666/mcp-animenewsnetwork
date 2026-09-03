@@ -78,40 +78,19 @@
                   "description": "Which get_title lookup this id belongs to."
                 },
                 "type": {
-                  "anyOf": [
-                    {
-                      "type": "string"
-                    },
-                    {
-                      "type": "null"
-                    }
-                  ],
-                  "description": "TV, movie, OAV, ONA, special, manga or novel."
+                  "description": "TV, movie, OAV, ONA, special, manga or novel.",
+                  "type": ["string", "null"]
                 },
                 "name": {
                   "type": "string"
                 },
                 "precision": {
-                  "anyOf": [
-                    {
-                      "type": "string"
-                    },
-                    {
-                      "type": "null"
-                    }
-                  ],
-                  "description": "Disambiguator the site shows next to the name, such as 'TV 2'."
+                  "description": "Disambiguator the site shows next to the name, such as 'TV 2'.",
+                  "type": ["string", "null"]
                 },
                 "vintage": {
-                  "anyOf": [
-                    {
-                      "type": "string"
-                    },
-                    {
-                      "type": "null"
-                    }
-                  ],
-                  "description": "Original release date or range, as published."
+                  "description": "Original release date or range, as published.",
+                  "type": ["string", "null"]
                 },
                 "source_url": {
                   "type": "string",
@@ -126,7 +105,7 @@
             "type": "integer",
             "minimum": -9007199254740991,
             "maximum": 9007199254740991,
-            "description": "Matches before 'limit' was applied. Higher than results.length means narrow the query."
+            "description": "Rows this server could read, before 'limit' was applied. Higher than results.length means narrow the query."
           },
           "notes": {
             "type": "array",
@@ -152,7 +131,7 @@
     {
       "name": "get_title",
       "title": "Read an encyclopedia entry",
-      "description": "Read one Anime News Network encyclopedia entry by id. Get the id and kind from search_titles first. Sections are opt-in because a full record is very large: ask only for what you need. 'basic' covers type, vintage, genres, themes, episode count, ratings and the plot summary. Long plot summaries are paginated: when 'truncated' is true, call again with 'offset' set to 'next_offset'.",
+      "description": "Read one Anime News Network encyclopedia entry by id. Get the id and kind from search_titles first. Sections are opt-in because a full record is very large: ask only for what you need. The entry's name, kind, id and link come back whatever you ask for, so any answer can be cited. 'basic' covers type, vintage, genres, themes, episode count, ratings and the plot summary. Long plot summaries are paginated: when 'truncated' is true, call again with 'offset' set to 'next_offset'.",
       "inputSchema": {
         "type": "object",
         "properties": {
@@ -222,40 +201,19 @@
                 "description": "Which get_title lookup this id belongs to."
               },
               "type": {
-                "anyOf": [
-                  {
-                    "type": "string"
-                  },
-                  {
-                    "type": "null"
-                  }
-                ],
-                "description": "TV, movie, OAV, ONA, special, manga or novel."
+                "description": "TV, movie, OAV, ONA, special, manga or novel.",
+                "type": ["string", "null"]
               },
               "name": {
                 "type": "string"
               },
               "precision": {
-                "anyOf": [
-                  {
-                    "type": "string"
-                  },
-                  {
-                    "type": "null"
-                  }
-                ],
-                "description": "Disambiguator the site shows next to the name, such as 'TV 2'."
+                "description": "Disambiguator the site shows next to the name, such as 'TV 2'.",
+                "type": ["string", "null"]
               },
               "vintage": {
-                "anyOf": [
-                  {
-                    "type": "string"
-                  },
-                  {
-                    "type": "null"
-                  }
-                ],
-                "description": "Original release date or range, as published."
+                "description": "Original release date or range, as published.",
+                "type": ["string", "null"]
               },
               "source_url": {
                 "type": "string",
@@ -284,34 +242,13 @@
             }
           },
           "episode_count": {
-            "anyOf": [
-              {
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ]
+            "type": ["string", "null"]
           },
           "running_time": {
-            "anyOf": [
-              {
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ]
+            "type": ["string", "null"]
           },
           "objectionable_content": {
-            "anyOf": [
-              {
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ]
+            "type": ["string", "null"]
           },
           "official_websites": {
             "type": "array",
@@ -320,14 +257,7 @@
             }
           },
           "picture_url": {
-            "anyOf": [
-              {
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ]
+            "type": ["string", "null"]
           },
           "opening_themes": {
             "type": "array",
@@ -359,24 +289,10 @@
                     ]
                   },
                   "weighted_score": {
-                    "anyOf": [
-                      {
-                        "type": "number"
-                      },
-                      {
-                        "type": "null"
-                      }
-                    ]
+                    "type": ["number", "null"]
                   },
                   "bayesian_score": {
-                    "anyOf": [
-                      {
-                        "type": "number"
-                      },
-                      {
-                        "type": "null"
-                      }
-                    ]
+                    "type": ["number", "null"]
                   }
                 },
                 "required": ["votes", "weighted_score", "bayesian_score"],
@@ -388,14 +304,7 @@
             ]
           },
           "plot_summary": {
-            "anyOf": [
-              {
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ]
+            "type": ["string", "null"]
           },
           "total_chars": {
             "type": "integer",
@@ -453,15 +362,8 @@
                   ]
                 },
                 "lang": {
-                  "anyOf": [
-                    {
-                      "type": "string"
-                    },
-                    {
-                      "type": "null"
-                    }
-                  ],
-                  "description": "Language of this credit, such as 'JA' for the Japanese cast of a Japanese production or 'FR' for the French dub. Null when the site records none, which is not a claim that the credit is the original one."
+                  "description": "Language of this credit, such as 'JA' for the Japanese cast of a Japanese production or 'FR' for the French dub. Null when the site records none, which is not a claim that the credit is the original one.",
+                  "type": ["string", "null"]
                 }
               },
               "required": ["role", "person", "person_id", "lang"],
@@ -475,14 +377,7 @@
               "type": "object",
               "properties": {
                 "lang": {
-                  "anyOf": [
-                    {
-                      "type": "string"
-                    },
-                    {
-                      "type": "null"
-                    }
-                  ]
+                  "type": ["string", "null"]
                 },
                 "credits": {
                   "type": "integer",
@@ -559,24 +454,10 @@
                   "type": "string"
                 },
                 "title": {
-                  "anyOf": [
-                    {
-                      "type": "string"
-                    },
-                    {
-                      "type": "null"
-                    }
-                  ]
+                  "type": ["string", "null"]
                 },
                 "lang": {
-                  "anyOf": [
-                    {
-                      "type": "string"
-                    },
-                    {
-                      "type": "null"
-                    }
-                  ]
+                  "type": ["string", "null"]
                 }
               },
               "required": ["num", "title", "lang"],
@@ -592,24 +473,10 @@
                   "type": "string"
                 },
                 "date": {
-                  "anyOf": [
-                    {
-                      "type": "string"
-                    },
-                    {
-                      "type": "null"
-                    }
-                  ]
+                  "type": ["string", "null"]
                 },
                 "href": {
-                  "anyOf": [
-                    {
-                      "type": "string"
-                    },
-                    {
-                      "type": "null"
-                    }
-                  ]
+                  "type": ["string", "null"]
                 }
               },
               "required": ["name", "date", "href"],
@@ -651,14 +518,7 @@
                   "type": "string"
                 },
                 "date": {
-                  "anyOf": [
-                    {
-                      "type": "string"
-                    },
-                    {
-                      "type": "null"
-                    }
-                  ]
+                  "type": ["string", "null"]
                 }
               },
               "required": ["title", "href", "date"],
@@ -677,14 +537,7 @@
                   "type": "string"
                 },
                 "date": {
-                  "anyOf": [
-                    {
-                      "type": "string"
-                    },
-                    {
-                      "type": "null"
-                    }
-                  ]
+                  "type": ["string", "null"]
                 }
               },
               "required": ["title", "href", "date"],
@@ -698,27 +551,7 @@
             }
           }
         },
-        "required": [
-          "title",
-          "alt_titles",
-          "genres",
-          "themes",
-          "episode_count",
-          "running_time",
-          "objectionable_content",
-          "official_websites",
-          "picture_url",
-          "opening_themes",
-          "ending_themes",
-          "ratings",
-          "plot_summary",
-          "total_chars",
-          "returned_chars",
-          "offset",
-          "next_offset",
-          "truncated",
-          "notes"
-        ],
+        "required": ["title", "notes"],
         "$schema": "http://json-schema.org/draft-07/schema#",
         "additionalProperties": false
       },
@@ -735,7 +568,7 @@
     {
       "name": "list_recent",
       "title": "List recent or browse alphabetically",
-      "description": "List what was added to the Anime News Network encyclopedia most recently: anime, manga, people or companies. Pass 'starts_with' to browse titles alphabetically instead, which only applies to anime and manga. Rows carry an id you can pass to get_title when the kind is anime or manga. This is a listing, not a search: use search_titles when you know what you are looking for.",
+      "description": "List what was added to the Anime News Network encyclopedia most recently: anime, manga, people or companies. Pass 'starts_with' to browse titles alphabetically instead, which only applies to anime and manga. Rows carry an id you can pass to get_title when the kind is anime or manga. This walks the catalogue in order: use search_titles when you know the title you are after.",
       "inputSchema": {
         "type": "object",
         "properties": {
@@ -748,6 +581,7 @@
           "starts_with": {
             "description": "Single letter. Switches to an alphabetical browse of titles. Anime and manga only.",
             "type": "string",
+            "minLength": 1,
             "maxLength": 1
           },
           "limit": {
@@ -811,54 +645,19 @@
                   "type": "string"
                 },
                 "type": {
-                  "anyOf": [
-                    {
-                      "type": "string"
-                    },
-                    {
-                      "type": "null"
-                    }
-                  ]
+                  "type": ["string", "null"]
                 },
                 "precision": {
-                  "anyOf": [
-                    {
-                      "type": "string"
-                    },
-                    {
-                      "type": "null"
-                    }
-                  ]
+                  "type": ["string", "null"]
                 },
                 "vintage": {
-                  "anyOf": [
-                    {
-                      "type": "string"
-                    },
-                    {
-                      "type": "null"
-                    }
-                  ]
+                  "type": ["string", "null"]
                 },
                 "date_added": {
-                  "anyOf": [
-                    {
-                      "type": "string"
-                    },
-                    {
-                      "type": "null"
-                    }
-                  ]
+                  "type": ["string", "null"]
                 },
                 "source_url": {
-                  "anyOf": [
-                    {
-                      "type": "string"
-                    },
-                    {
-                      "type": "null"
-                    }
-                  ]
+                  "type": ["string", "null"]
                 }
               },
               "required": [
@@ -934,7 +733,8 @@
           },
           "category": {
             "description": "Keep only items tagged this way, matched case-insensitively.",
-            "type": "string"
+            "type": "string",
+            "minLength": 1
           },
           "limit": {
             "default": 20,
@@ -969,38 +769,21 @@
                   "description": "Article URL. Show this when citing the story."
                 },
                 "summary": {
-                  "anyOf": [
-                    {
-                      "type": "string"
-                    },
-                    {
-                      "type": "null"
-                    }
-                  ]
+                  "type": ["string", "null"]
                 },
                 "published_at": {
-                  "anyOf": [
-                    {
-                      "type": "string"
-                    },
-                    {
-                      "type": "null"
-                    }
-                  ],
-                  "description": "ISO 8601 when the feed date could be parsed."
+                  "description": "ISO 8601 when the feed date could be parsed.",
+                  "type": ["string", "null"]
                 },
-                "category": {
-                  "anyOf": [
-                    {
-                      "type": "string"
-                    },
-                    {
-                      "type": "null"
-                    }
-                  ]
+                "categories": {
+                  "type": "array",
+                  "items": {
+                    "type": "string"
+                  },
+                  "description": "Every tag the feed carries on the story. Empty when it carries none."
                 }
               },
-              "required": ["title", "link", "summary", "published_at", "category"],
+              "required": ["title", "link", "summary", "published_at", "categories"],
               "additionalProperties": false
             }
           },
@@ -1032,5 +815,5 @@
       }
     }
   ],
-  "version": "2.0.1"
+  "version": "3.0.0"
 }

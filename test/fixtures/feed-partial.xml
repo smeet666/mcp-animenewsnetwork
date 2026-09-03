@@ -18,11 +18,11 @@
     </item>
     <item>
       <title>Placeholder Wire Story 2</title>
-      <link>https://www.animenewsnetwork.com/news/2026-08-03/placeholder-story-2</link>
-      <guid isPermaLink="true">https://www.animenewsnetwork.com/news/2026-08-03/placeholder-story-2</guid>
+      <link></link>
+      <guid isPermaLink="true"></guid>
       <description>Placeholder summary sentence for wire story 2.</description>
       <pubDate>Mon, 03 Aug 2026 16:30:00 -0400</pubDate>
-      <category>Anime</category>
+      <category>Manga</category>
       <dc:creator>Placeholder Reporter</dc:creator>
       <unknown-item-field>noise the parser must ignore</unknown-item-field>
     </item>
@@ -32,16 +32,16 @@
       <guid isPermaLink="true">https://www.animenewsnetwork.com/news/2026-08-03/placeholder-story-3</guid>
       <description>Placeholder summary sentence for wire story 3.</description>
       <pubDate>Mon, 03 Aug 2026 16:30:00 -0400</pubDate>
-      
+      <category>Anime</category>
       <dc:creator>Placeholder Reporter</dc:creator>
       <unknown-item-field>noise the parser must ignore</unknown-item-field>
     </item>
     <item>
       <title>Placeholder Wire Story 4</title>
-      <link>https://www.animenewsnetwork.com/news/2026-08-03/placeholder-story-4</link>
-      <guid isPermaLink="true">https://www.animenewsnetwork.com/news/2026-08-03/placeholder-story-4</guid>
+      <link></link>
+      <guid isPermaLink="true"></guid>
       <description>Placeholder summary sentence for wire story 4.</description>
-      <pubDate>sometime last Thursday</pubDate>
+      <pubDate>Mon, 03 Aug 2026 16:30:00 -0400</pubDate>
       <category>Manga</category>
       <dc:creator>Placeholder Reporter</dc:creator>
       <unknown-item-field>noise the parser must ignore</unknown-item-field>
@@ -50,44 +50,9 @@
       <title>Placeholder Wire Story 5</title>
       <link>https://www.animenewsnetwork.com/news/2026-08-03/placeholder-story-5</link>
       <guid isPermaLink="true">https://www.animenewsnetwork.com/news/2026-08-03/placeholder-story-5</guid>
-      <description>&lt;cite&gt;Placeholder Series Alpha&lt;/cite&gt; debuts in
-      &lt;cite&gt;Placeholder Magazine&lt;/cite&gt;   on August 31</description>
+      <description>Placeholder summary sentence for wire story 5.</description>
       <pubDate>Mon, 03 Aug 2026 16:30:00 -0400</pubDate>
       <category>Manga</category>
-      <dc:creator>Placeholder Reporter</dc:creator>
-      <unknown-item-field>noise the parser must ignore</unknown-item-field>
-    </item>
-    <item>
-      <title>Placeholder Wire Story 6</title>
-      <link>https://www.animenewsnetwork.com/news/2026-08-03/placeholder-story-6</link>
-      <guid isPermaLink="true">https://www.animenewsnetwork.com/news/2026-08-03/placeholder-story-6</guid>
-      <description>&lt;p&gt;&lt;/p&gt;  
-  &lt;br/&gt;</description>
-      <pubDate>Mon, 03 Aug 2026 16:30:00 -0400</pubDate>
-      <category>Manga</category>
-      <dc:creator>Placeholder Reporter</dc:creator>
-      <unknown-item-field>noise the parser must ignore</unknown-item-field>
-    </item>
-    <item>
-      <title>Placeholder Wire Story 7</title>
-      <link>https://www.animenewsnetwork.com/news/2026-08-03/placeholder-story-7</link>
-      <guid isPermaLink="true">https://www.animenewsnetwork.com/news/2026-08-03/placeholder-story-7</guid>
-      <description>Placeholder summary sentence for wire story 7.</description>
-      <pubDate>Mon, 03 Aug 2026 16:30:00 -0400</pubDate>
-      <category>People</category>
-      <category>Events</category>
-      <dc:creator>Placeholder Reporter</dc:creator>
-      <unknown-item-field>noise the parser must ignore</unknown-item-field>
-    </item>
-    <item>
-      <title>Placeholder Wire Story 8</title>
-      <link>https://www.animenewsnetwork.com/news/2026-08-03/placeholder-story-8</link>
-      <guid isPermaLink="true">https://www.animenewsnetwork.com/news/2026-08-03/placeholder-story-8</guid>
-      <description>Placeholder summary sentence for wire story 8.</description>
-      <pubDate>Mon, 03 Aug 2026 16:30:00 -0400</pubDate>
-      <category>Anime</category>
-      <category>Manga</category>
-      <category>Events</category>
       <dc:creator>Placeholder Reporter</dc:creator>
       <unknown-item-field>noise the parser must ignore</unknown-item-field>
     </item>

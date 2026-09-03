@@ -12,7 +12,14 @@ import {
   createLogger,
   loadConfig,
 } from "../config.js";
-import type { NewsItem, ReportPage, TitleDetail, TitleKind, TitleSummary } from "../types.js";
+import type {
+  NewsItem,
+  OnSkip,
+  ReportPage,
+  TitleDetail,
+  TitleKind,
+  TitleSummary,
+} from "../types.js";
 import { TtlLruCache } from "./cache.js";
 import { fetchText } from "./http.js";
 import { parseFeed } from "./parseFeed.js";
@@ -39,6 +46,37 @@ export interface Outcome<T> {
   data: T;
   /** True when served from the in-memory cache rather than the network. */
   cached: boolean;
+  /**
+   * How many entries the site sent that could not be read, when any were.
+   *
+   * Absent on a read that came back whole, so a caller reads a number only
+   * where one was measured.
+   */
+  skipped?: number;
+}
+
+/** A parsed answer and what the parsing left behind, kept together. */
+interface Parsed<T> {
+  data: T;
+  skipped?: number;
+}
+
+/**
+ * Run a parser that reports what it read past, and keep the count beside the
+ * data.
+ *
+ * The count is stored with the answer, because the answer is cached. A gap
+ * reported once and silent on every read served from memory afterwards would be
+ * the same silence, an hour long. The log line is for an operator watching for a
+ * shape change upstream, and it is written on the read that measured the gap.
+ */
+function withSkipCount<T>(logger: Logger, url: string, run: (onSkip: OnSkip) => T): Parsed<T> {
+  let skipped = 0;
+  const data = run((dropped, total) => {
+    skipped = dropped;
+    logger.info(`skipped ${dropped} of ${total} unreadable entries on ${url}`);
+  });
+  return skipped > 0 ? { data, skipped } : { data };
 }
 
 export type RecentKind = keyof typeof RECENT_REPORT_IDS;
@@ -114,22 +152,22 @@ export class AnnClient {
   async searchTitles(query: string): Promise<Outcome<TitleSummary[]>> {
     const url = titleSearchUrl(query);
     return await this.fetchParsed(url, this.encyclopediaCache, (body) =>
-      parseTitleList(body, url, (skipped, total) => {
-        this.logger.info(`skipped ${skipped} of ${total} unreadable records on ${url}`);
-      }),
+      withSkipCount(this.logger, url, (onSkip) => parseTitleList(body, url, onSkip)),
     );
   }
 
   async getTitle(kind: TitleKind, id: number): Promise<Outcome<TitleDetail>> {
     const url = titleDetailUrl(kind, id);
-    return await this.fetchParsed(url, this.encyclopediaCache, (body) =>
-      parseTitleDetail(body, url, `${kind} id ${id}`),
-    );
+    return await this.fetchParsed(url, this.encyclopediaCache, (body) => ({
+      data: parseTitleDetail(body, url, `${kind} id ${id}`),
+    }));
   }
 
   async listRecent(kind: RecentKind, limit: number, offset: number): Promise<Outcome<ReportPage>> {
     const url = recentReportUrl(RECENT_REPORT_IDS[kind], limit, offset);
-    return await this.fetchParsed(url, this.encyclopediaCache, (body) => parseReport(body, url));
+    return await this.fetchParsed(url, this.encyclopediaCache, (body) => ({
+      data: parseReport(body, url),
+    }));
   }
 
   async browseTitles(options: {
@@ -139,12 +177,18 @@ export class AnnClient {
     startsWith?: string;
   }): Promise<Outcome<ReportPage>> {
     const url = titleListReportUrl(options);
-    return await this.fetchParsed(url, this.encyclopediaCache, (body) => parseReport(body, url));
+    // The parser reads the catalogue from the same value that filtered the
+    // request, so the URL and the rows it produces cannot disagree.
+    return await this.fetchParsed(url, this.encyclopediaCache, (body) => ({
+      data: parseReport(body, url, options.type ? { requestedKind: options.type } : {}),
+    }));
   }
 
   async getNews(feed: FeedName, edition: Edition): Promise<Outcome<NewsItem[]>> {
     const url = feedUrl(feed, edition);
-    return await this.fetchParsed(url, this.newsCache, (body) => parseFeed(body, url));
+    return await this.fetchParsed(url, this.newsCache, (body) =>
+      withSkipCount(this.logger, url, (onSkip) => parseFeed(body, url, onSkip)),
+    );
   }
 
   /**
@@ -155,12 +199,12 @@ export class AnnClient {
   private async fetchParsed<T>(
     url: string,
     cache: TtlLruCache<unknown>,
-    parse: (body: string) => T,
+    parse: (body: string) => Parsed<T>,
   ): Promise<Outcome<T>> {
-    const hit = cache.get(url);
+    const hit = cache.get(url) as Parsed<T> | undefined;
     if (hit !== undefined) {
       this.logger.debug(`cache hit ${url}`);
-      return { data: hit as T, cached: true };
+      return { ...hit, cached: true };
     }
 
     const body = await fetchText(url, {
@@ -170,8 +214,8 @@ export class AnnClient {
       ...(this.fetchImpl ? { fetchImpl: this.fetchImpl } : {}),
     });
 
-    const data = parse(body);
-    cache.set(url, data);
-    return { data, cached: false };
+    const parsed = parse(body);
+    cache.set(url, parsed);
+    return { ...parsed, cached: false };
   }
 }

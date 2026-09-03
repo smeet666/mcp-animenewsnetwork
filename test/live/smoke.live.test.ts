@@ -189,7 +189,7 @@ describe.runIf(enabled)("live Anime News Network", () => {
       `pubDate no longer converts to ISO 8601: got "${first.publishedAt}"`,
     ).toBe(false);
     expect(
-      news.data.some((item) => item.category !== null),
+      news.data.some((item) => item.categories.length > 0),
       "no story carried a <category>: the element may have been dropped",
     ).toBe(true);
 

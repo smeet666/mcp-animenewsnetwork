@@ -29,6 +29,10 @@ export const getNewsInputShape = {
     .describe("Regional edition. They differ mostly in release and licensing coverage."),
   category: z
     .string()
+    // The trim runs before the bound, so a value of spaces is refused. Bounding
+    // first would accept it and hand the tool an empty restriction to drop.
+    .trim()
+    .min(1)
     .optional()
     .describe("Keep only items tagged this way, matched case-insensitively."),
   limit: z.number().int().min(1).max(100).default(20).describe("How many stories to return."),
@@ -54,25 +58,35 @@ export interface GetNewsArgs {
 
 export async function runGetNews(client: AnnClient, args: GetNewsArgs): Promise<ToolResult> {
   try {
-    const { data, cached } = await client.getNews(args.feed, args.edition);
+    const { data, cached, skipped } = await client.getNews(args.feed, args.edition);
 
+    // A story carries as many tags as the wire gives it, and any one of them
+    // answers the filter: matching the first alone drops stories the wire did
+    // tag the way that was asked for.
     const wanted = args.category?.trim().toLowerCase();
-    const filtered = wanted ? data.filter((item) => item.category?.toLowerCase() === wanted) : data;
+    const filtered = wanted
+      ? data.filter((item) => item.categories.some((one) => one.toLowerCase() === wanted))
+      : data;
     const items = filtered.slice(0, args.limit).map(toNewsItemOut);
 
     const notes: string[] = [];
     if (cached) {
       notes.push("Served from this server's short-lived in-memory cache.");
     }
+    if (skipped) {
+      notes.push(
+        `${skipped} ${skipped === 1 ? "entry" : "entries"} the wire published could not be read and are absent from these figures.`,
+      );
+    }
     if (filtered.length > items.length) {
       notes.push(
-        `${filtered.length} stories are in the feed and the first ${items.length} are shown.`,
+        wanted
+          ? `${filtered.length} stories are tagged that way and the first ${items.length} are shown.`
+          : `${filtered.length} stories are in the feed and the first ${items.length} are shown.`,
       );
     }
     if (wanted && filtered.length === 0) {
-      const seen: string[] = [
-        ...new Set(data.map((item) => item.category).filter((one): one is string => one !== null)),
-      ];
+      const seen: string[] = [...new Set(data.flatMap((item) => item.categories))];
       notes.push(
         seen.length > 0
           ? `No story is tagged "${args.category}". This feed currently carries: ${seen.join(", ")}.`
@@ -86,7 +100,7 @@ export async function runGetNews(client: AnnClient, args: GetNewsArgs): Promise<
         const parts = [
           `${index + 1}. ${item.title}`,
           when ? `(${when})` : "",
-          item.category ? `· ${item.category}` : "",
+          item.categories.length > 0 ? `· ${item.categories.join(", ")}` : "",
         ];
         return parts.filter(Boolean).join(" ");
       })

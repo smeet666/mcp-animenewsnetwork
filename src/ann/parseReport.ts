@@ -13,18 +13,48 @@
 
 import type { XmlElement } from "@rgrove/parse-xml";
 import { parseFailure } from "../errors.js";
-import type { ReportPage, ReportRow } from "../types.js";
+import type { ReportPage, ReportRow, TitleKind } from "../types.js";
 import { ATTR, REPORT_EL } from "./paths.js";
 import { absoluteSiteUrl, titlePageUrl } from "./urls.js";
 import { attr, children, childText, expectRoot, parseDocument, textOf } from "./xml.js";
 
 const LINK_ELEMENTS = ["anime", "manga", "person", "company"] as const;
 
+/**
+ * The `type` values report 155 publishes for each catalogue, spelled as the
+ * site spells them and compared without regard to case.
+ *
+ * A value on neither list leaves the row's catalogue null. The vocabulary is
+ * the encyclopedia's own editorial labelling of a work's format, maintained by
+ * hand and open: a label nobody has seen yet is an ordinary event. Anime ids
+ * and manga ids are two catalogues sharing one integer range, so an id alone
+ * says nothing about which one holds it. Guessing a catalogue there builds a
+ * link into the other namespace, where the reader who follows it finds nothing
+ * and a lookup on that id fails on a title the site does hold.
+ */
+const ANIME_TYPES = ["TV", "movie", "ONA", "OAV", "special", "omnibus"];
+const MANGA_TYPES = ["manga", "anthology"];
+
+const ANIME_LABELS = new Set(ANIME_TYPES.map((type) => type.toLowerCase()));
+const MANGA_LABELS = new Set(MANGA_TYPES.map((type) => type.toLowerCase()));
+
 /** The id a report row carries in the query string of its href. */
 const HREF_ID = /[?&]id=(\d+)/;
 type LinkKind = (typeof LINK_ELEMENTS)[number];
 
-export function parseReport(xml: string, url: string): ReportPage {
+export interface ParseReportOptions {
+  /**
+   * The catalogue the request filtered on. The site answers such a request from
+   * that catalogue alone, which settles what every row of report 155 is.
+   */
+  requestedKind?: TitleKind;
+}
+
+export function parseReport(
+  xml: string,
+  url: string,
+  options: ParseReportOptions = {},
+): ReportPage {
   const root = expectRoot(parseDocument(xml, url), REPORT_EL.root, url);
   const items = children(root, REPORT_EL.item);
   if (items.length === 0) {
@@ -34,7 +64,7 @@ export function parseReport(xml: string, url: string): ReportPage {
   const rows: ReportRow[] = [];
 
   for (const item of items) {
-    const row = readLinkedItem(item) ?? readTitleItem(item);
+    const row = readLinkedItem(item) ?? readTitleItem(item, options.requestedKind);
     if (row) {
       rows.push(row);
     }
@@ -77,8 +107,8 @@ function readLinkedItem(item: XmlElement): ReportRow | null {
   return null;
 }
 
-/** The id=155 shape: scalar children, with the kind carried by `type`. */
-function readTitleItem(item: XmlElement): ReportRow | null {
+/** The id=155 shape: scalar children, with no element naming the catalogue. */
+function readTitleItem(item: XmlElement, requestedKind: TitleKind | undefined): ReportRow | null {
   const name = childText(item, REPORT_EL.name);
   if (!name) {
     return null;
@@ -88,8 +118,20 @@ function readTitleItem(item: XmlElement): ReportRow | null {
   const parsedId = rawId === null ? Number.NaN : Number.parseInt(rawId, 10);
   const id = Number.isFinite(parsedId) ? parsedId : null;
   const type = childText(item, REPORT_EL.type);
-  // This report mixes anime and manga, and only the type tells them apart.
-  const kind = type?.toLowerCase() === "manga" ? "manga" : "anime";
+  const labelled = kindFromLabel(type);
+  // A request that named a catalogue was answered from that catalogue alone, so
+  // it decides the row. Unfiltered, this report mixes both and the label is the
+  // only hint a row carries.
+  //
+  // A label naming the other catalogue outright is the one thing that unsettles
+  // this: reports.xml passes over a parameter it does not recognise, so a filter
+  // it stopped honouring would answer from both sides while every row still
+  // claimed the side that was asked for. The row is kept, since its name and its
+  // label are true either way, and its catalogue is left unstated so no link is
+  // built on a filter the response itself contradicts.
+  const contradicted =
+    requestedKind !== undefined && labelled !== null && labelled !== requestedKind;
+  const kind = contradicted ? null : (requestedKind ?? labelled);
 
   return {
     id,
@@ -100,9 +142,24 @@ function readTitleItem(item: XmlElement): ReportRow | null {
     vintage: childText(item, REPORT_EL.vintage),
     dateAdded: null,
     // This shape carries no href, so the link attribution requires is built
-    // from the id and kind rather than left null.
-    sourceUrl: id === null ? null : titlePageUrl(kind, id),
+    // from the id and the kind. Either one missing leaves it null: a link is
+    // only worth publishing when it reaches the entry it claims to.
+    sourceUrl: id === null || kind === null ? null : titlePageUrl(kind, id),
   };
+}
+
+function kindFromLabel(type: string | null): TitleKind | null {
+  if (type === null) {
+    return null;
+  }
+  const label = type.toLowerCase();
+  if (ANIME_LABELS.has(label)) {
+    return "anime";
+  }
+  if (MANGA_LABELS.has(label)) {
+    return "manga";
+  }
+  return null;
 }
 
 function firstNamed(parent: XmlElement, name: LinkKind): XmlElement | null {
