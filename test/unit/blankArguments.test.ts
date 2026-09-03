@@ -98,9 +98,10 @@ describe("what a value with content still does", () => {
     })) as CallResult;
 
     expect(result.isError ?? false).toBe(false);
-    const structured = result.structuredContent as { items: { category: string | null }[] };
+    const structured = result.structuredContent as { items: { categories: string[] }[] };
+    expect(structured.items.length).toBeGreaterThan(0);
     for (const item of structured.items) {
-      expect(item.category?.toLowerCase()).toBe("anime");
+      expect(item.categories.map((one) => one.toLowerCase())).toContain("anime");
     }
   });
 

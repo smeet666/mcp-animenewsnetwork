@@ -74,7 +74,9 @@ export const newsItemSchema = z.object({
   link: z.string().describe("Article URL. Show this when citing the story."),
   summary: z.string().nullable(),
   published_at: z.string().nullable().describe("ISO 8601 when the feed date could be parsed."),
-  category: z.string().nullable(),
+  categories: z
+    .array(z.string())
+    .describe("Every tag the feed carries on the story. Empty when it carries none."),
 });
 
 export function toNewsItemOut(item: NewsItem): z.infer<typeof newsItemSchema> {
@@ -83,7 +85,7 @@ export function toNewsItemOut(item: NewsItem): z.infer<typeof newsItemSchema> {
     link: item.link,
     summary: item.summary,
     published_at: item.publishedAt,
-    category: item.category,
+    categories: item.categories,
   };
 }
 

@@ -136,5 +136,11 @@ export interface NewsItem {
   link: string;
   summary: string | null;
   publishedAt: string | null;
-  category: string | null;
+  /**
+   * Every tag the entry carries, in the order the feed writes them.
+   *
+   * The wire tags a story more than once often enough that reading the first
+   * tag alone hides the rest, and a story tagged nowhere carries an empty list.
+   */
+  categories: string[];
 }

@@ -9,7 +9,7 @@
 import { parseFailure } from "../errors.js";
 import type { NewsItem, OnSkip } from "../types.js";
 import { FEED_EL } from "./paths.js";
-import { children, childText, expectRoot, parseDocument } from "./xml.js";
+import { children, childText, expectRoot, parseDocument, textOf } from "./xml.js";
 
 export function parseFeed(xml: string, url: string, onSkip?: OnSkip): NewsItem[] {
   const root = expectRoot(parseDocument(xml, url), FEED_EL.root, url);
@@ -38,7 +38,9 @@ export function parseFeed(xml: string, url: string, onSkip?: OnSkip): NewsItem[]
       link,
       summary: stripMarkup(childText(node, FEED_EL.description)),
       publishedAt: toIsoDate(childText(node, FEED_EL.pubDate)),
-      category: childText(node, FEED_EL.category),
+      categories: children(node, FEED_EL.category)
+        .map((element) => textOf(element))
+        .filter((name): name is string => name !== null),
     });
   }
 

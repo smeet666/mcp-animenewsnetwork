@@ -68,5 +68,28 @@
       <dc:creator>Placeholder Reporter</dc:creator>
       <unknown-item-field>noise the parser must ignore</unknown-item-field>
     </item>
+    <item>
+      <title>Placeholder Wire Story 7</title>
+      <link>https://www.animenewsnetwork.com/news/2026-08-03/placeholder-story-7</link>
+      <guid isPermaLink="true">https://www.animenewsnetwork.com/news/2026-08-03/placeholder-story-7</guid>
+      <description>Placeholder summary sentence for wire story 7.</description>
+      <pubDate>Mon, 03 Aug 2026 16:30:00 -0400</pubDate>
+      <category>People</category>
+      <category>Events</category>
+      <dc:creator>Placeholder Reporter</dc:creator>
+      <unknown-item-field>noise the parser must ignore</unknown-item-field>
+    </item>
+    <item>
+      <title>Placeholder Wire Story 8</title>
+      <link>https://www.animenewsnetwork.com/news/2026-08-03/placeholder-story-8</link>
+      <guid isPermaLink="true">https://www.animenewsnetwork.com/news/2026-08-03/placeholder-story-8</guid>
+      <description>Placeholder summary sentence for wire story 8.</description>
+      <pubDate>Mon, 03 Aug 2026 16:30:00 -0400</pubDate>
+      <category>Anime</category>
+      <category>Manga</category>
+      <category>Events</category>
+      <dc:creator>Placeholder Reporter</dc:creator>
+      <unknown-item-field>noise the parser must ignore</unknown-item-field>
+    </item>
   </channel>
 </rss>

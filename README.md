@@ -131,9 +131,11 @@ Reads one entry. The heavier parts are asked for rather than served by default.
 | `max_chars` | integer, 200 to 20000, default `4000`                                                                        | no       | How much of the plot summary to serve. |
 | `offset`    | integer, 0 or more, default `0`                                                                              | no       | Where to resume the plot summary.      |
 
-**In return:** the entry a search row carries, plus `alt_titles`, `genres`,
-`themes`, `episode_count`, `running_time`, `objectionable_content`,
-`official_websites`, `picture_url`, `opening_themes` and `ending_themes`.
+**In return:** `title`, the entry a search row carries, which comes back
+whatever was asked for so that any answer can be cited. Asking for `basic` adds
+`alt_titles`, `genres`, `themes`, `episode_count`, `running_time`,
+`objectionable_content`, `official_websites`, `picture_url`, `opening_themes`
+and `ending_themes`.
 `ratings` carries the readers' `votes`, `weighted_score` and `bayesian_score`,
 each `null` where the encyclopedia computed none. `plot_summary` is served a
 slice at a time, described by `total_chars`, `returned_chars`, `offset`,
@@ -161,15 +163,16 @@ continues.
 
 Reads the news wire.
 
-| Argument   | Type                                      | Required | What it does                      |
-| ---------- | ----------------------------------------- | -------- | --------------------------------- |
-| `feed`     | `all`, `news` or `reviews`, default `all` | no       | Which feed to read.               |
-| `edition`  | `us`, `uk` or `au`, default `us`          | no       | Which edition.                    |
-| `category` | string                                    | no       | Keep the stories of one category. |
-| `limit`    | integer, 1 to 100, default `20`           | no       | Stories to serve.                 |
+| Argument   | Type                                      | Required | What it does                        |
+| ---------- | ----------------------------------------- | -------- | ----------------------------------- |
+| `feed`     | `all`, `news` or `reviews`, default `all` | no       | Which feed to read.                 |
+| `edition`  | `us`, `uk` or `au`, default `us`          | no       | Which edition.                      |
+| `category` | string                                    | no       | Keep the stories carrying this tag. |
+| `limit`    | integer, 1 to 100, default `20`           | no       | Stories to serve.                   |
 
-**In return:** `items`, each with its `title`, `link`, `summary`, `category` and
-`published_at` as an ISO timestamp when the feed's date could be read.
+**In return:** `items`, each with its `title`, `link`, `summary`, `categories`
+holding every tag the feed carries on the story, and `published_at` as an ISO
+timestamp when the feed's date could be read.
 `total_available` counts the stories the feed held, which is a fixed feed length
 rather than the size of the archive.
 
@@ -395,9 +398,11 @@ défaut.
 | `max_chars` | entier, 200 à 20000, défaut `4000`                                                                            | non    | La longueur de résumé à servir. |
 | `offset`    | entier, 0 ou plus, défaut `0`                                                                                 | non    | Où reprendre le résumé.         |
 
-**En retour :** la fiche que porte une ligne de recherche, plus `alt_titles`,
-`genres`, `themes`, `episode_count`, `running_time`, `objectionable_content`,
-`official_websites`, `picture_url`, `opening_themes` et `ending_themes`.
+**En retour :** `title`, la fiche que porte une ligne de recherche, qui revient
+quelle que soit la demande pour que toute réponse puisse être citée. Demander
+`basic` y ajoute `alt_titles`, `genres`, `themes`, `episode_count`,
+`running_time`, `objectionable_content`, `official_websites`, `picture_url`,
+`opening_themes` et `ending_themes`.
 `ratings` porte les `votes` des lecteurs, le `weighted_score` et le
 `bayesian_score`, chacun `null` là où l'encyclopédie n'en a calculé aucun.
 `plot_summary` est servi par tranches, décrites par `total_chars`,
@@ -425,15 +430,16 @@ vides. `mode` dit si la réponse a été lue en `recent` ou en `browse`, passer
 
 Lit le fil d'actualité.
 
-| Argument   | Type                                     | Requis | Ce qu'il fait                             |
-| ---------- | ---------------------------------------- | ------ | ----------------------------------------- |
-| `feed`     | `all`, `news` ou `reviews`, défaut `all` | non    | Le fil à lire.                            |
-| `edition`  | `us`, `uk` ou `au`, défaut `us`          | non    | L'édition.                                |
-| `category` | chaîne                                   | non    | Ne garder que les sujets d'une catégorie. |
-| `limit`    | entier, 1 à 100, défaut `20`             | non    | Sujets à servir.                          |
+| Argument   | Type                                     | Requis | Ce qu'il fait                                     |
+| ---------- | ---------------------------------------- | ------ | ------------------------------------------------- |
+| `feed`     | `all`, `news` ou `reviews`, défaut `all` | non    | Le fil à lire.                                    |
+| `edition`  | `us`, `uk` ou `au`, défaut `us`          | non    | L'édition.                                        |
+| `category` | chaîne                                   | non    | Ne garder que les sujets portant cette étiquette. |
+| `limit`    | entier, 1 à 100, défaut `20`             | non    | Sujets à servir.                                  |
 
-**En retour :** `items`, chacun avec son `title`, `link`, `summary`, `category`
-et `published_at` en horodatage ISO quand la date du fil a pu être lue.
+**En retour :** `items`, chacun avec son `title`, `link`, `summary`, ses
+`categories` portant chaque étiquette que le fil pose sur le sujet, et
+`published_at` en horodatage ISO quand la date du fil a pu être lue.
 `total_available` compte les sujets que le fil contenait, ce qui est une longueur
 de fil fixe et non la taille des archives.
 

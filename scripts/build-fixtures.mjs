@@ -181,6 +181,15 @@ const MARKUP_DESCRIPTION =
 
 const MARKUP_ONLY_DESCRIPTION = "&lt;p&gt;&lt;/p&gt;  \n  &lt;br/&gt;";
 
+/** The wire tags a story with as many categories as it likes, or with none. */
+function categoryElements(category) {
+  if (category === null) {
+    return "";
+  }
+  const names = Array.isArray(category) ? category : [category];
+  return names.map((name) => `<category>${name}</category>`).join("\n      ");
+}
+
 function feedItem(options) {
   const {
     seed = 1,
@@ -196,7 +205,7 @@ function feedItem(options) {
       <guid isPermaLink="true">${link}</guid>
       <description>${description}</description>
       <pubDate>${pubDate}</pubDate>
-      ${category === null ? "" : `<category>${category}</category>`}
+      ${categoryElements(category)}
       <dc:creator>Placeholder Reporter</dc:creator>
       <unknown-item-field>noise the parser must ignore</unknown-item-field>
     </item>`;
@@ -371,8 +380,9 @@ const FIXTURES = {
 `,
 
   /**
-   * A feed with a well-formed date, an unparseable one, a missing category and
-   * the escaped inline markup the live wire wraps titles in.
+   * A feed with a well-formed date, an unparseable one, a missing category, the
+   * escaped inline markup the live wire wraps titles in, and two stories the
+   * wire tags several ways at once, which it does for roughly one story in ten.
    */
   "feed.xml": rss(
     [
@@ -383,6 +393,8 @@ const FIXTURES = {
       feedItem({ seed: 4, pubDate: "sometime last Thursday" }),
       feedItem({ seed: 5, description: MARKUP_DESCRIPTION }),
       feedItem({ seed: 6, description: MARKUP_ONLY_DESCRIPTION }),
+      feedItem({ seed: 7, category: ["People", "Events"] }),
+      feedItem({ seed: 8, category: ["Anime", "Manga", "Events"] }),
     ].join("\n"),
   ),
 

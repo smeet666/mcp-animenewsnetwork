@@ -49,6 +49,7 @@ export const getTitleDescription = [
   "Read one Anime News Network encyclopedia entry by id.",
   "Get the id and kind from search_titles first.",
   "Sections are opt-in because a full record is very large: ask only for what you need.",
+  "The entry's name, kind, id and link come back whatever you ask for, so any answer can be cited.",
   "'basic' covers type, vintage, genres, themes, episode count, ratings and the plot summary.",
   "Long plot summaries are paginated: when 'truncated' is true, call again with 'offset' set to 'next_offset'.",
 ].join(" ");
@@ -126,29 +127,35 @@ const linkedSchema = z.object({
 
 export const getTitleOutputShape = {
   title: titleSummarySchema,
-  alt_titles: z.array(z.string()),
-  genres: z.array(z.string()),
-  themes: z.array(z.string()),
-  episode_count: z.string().nullable(),
-  running_time: z.string().nullable(),
-  objectionable_content: z.string().nullable(),
-  official_websites: z.array(z.string()),
-  picture_url: z.string().nullable(),
-  opening_themes: z.array(z.string()),
-  ending_themes: z.array(z.string()),
+  alt_titles: z.array(z.string()).optional(),
+  genres: z.array(z.string()).optional(),
+  themes: z.array(z.string()).optional(),
+  episode_count: z.string().nullable().optional(),
+  running_time: z.string().nullable().optional(),
+  objectionable_content: z.string().nullable().optional(),
+  official_websites: z.array(z.string()).optional(),
+  picture_url: z.string().nullable().optional(),
+  opening_themes: z.array(z.string()).optional(),
+  ending_themes: z.array(z.string()).optional(),
   ratings: z
     .object({
       votes: z.number().int().nullable(),
       weighted_score: z.number().nullable(),
       bayesian_score: z.number().nullable(),
     })
-    .nullable(),
-  plot_summary: z.string().nullable(),
-  total_chars: z.number().int().describe("Length of the full plot summary."),
-  returned_chars: z.number().int(),
-  offset: z.number().int(),
-  next_offset: z.number().int().nullable().describe("Pass as 'offset' to read the rest."),
-  truncated: z.boolean(),
+    .nullable()
+    .optional(),
+  plot_summary: z.string().nullable().optional(),
+  total_chars: z.number().int().describe("Length of the full plot summary.").optional(),
+  returned_chars: z.number().int().optional(),
+  offset: z.number().int().optional(),
+  next_offset: z
+    .number()
+    .int()
+    .nullable()
+    .describe("Pass as 'offset' to read the rest.")
+    .optional(),
+  truncated: z.boolean().optional(),
   cast: z.array(castSchema).optional(),
   cast_languages: z
     .array(z.object({ lang: z.string().nullable(), credits: z.number().int() }))
@@ -184,48 +191,35 @@ export async function runGetTitle(client: AnnClient, args: GetTitleArgs): Promis
       notes.push("Served from this server's short-lived in-memory cache.");
     }
 
-    const fullSummary = data.plotSummary ?? "";
+    // The entry's own fields are a section like any other, so the summary is
+    // read, paged and described only for a caller who asked for them.
+    const basic = wanted.has("basic");
+    const fullSummary = basic ? (data.plotSummary ?? "") : "";
     const { slice, nextOffset } = sliceAtLineBoundary(fullSummary, args.offset, args.max_chars);
-    if (nextOffset !== null) {
+    if (basic && nextOffset !== null) {
       notes.push(
         `The plot summary is longer than ${args.max_chars} characters. Call again with offset=${nextOffset} for the rest.`,
       );
     }
     // Silence here would look like "this entry has no summary", when the real
     // answer is that the offset asked for is past the end of one that exists.
-    if (slice === "" && args.offset > 0 && fullSummary.length > 0) {
+    if (basic && slice === "" && args.offset > 0 && fullSummary.length > 0) {
       notes.push(
         `offset=${args.offset} is past the end of a plot summary of ${fullSummary.length} characters. Call again with offset=0 to read it from the start.`,
       );
     }
 
+    // The entry's name and its link travel with every answer: they are what a
+    // caller cites, and an answer nobody can attribute is worth less than the
+    // request that fetched it.
     const structured: Record<string, unknown> = {
       title: toTitleSummaryOut(data),
-      alt_titles: data.altTitles,
-      genres: data.genres,
-      themes: data.themes,
-      episode_count: data.episodeCount,
-      running_time: data.runningTime,
-      objectionable_content: data.objectionableContent,
-      official_websites: data.officialWebsites,
-      picture_url: data.pictureUrl,
-      opening_themes: data.openingThemes,
-      ending_themes: data.endingThemes,
-      ratings: data.ratings
-        ? {
-            votes: data.ratings.votes,
-            weighted_score: data.ratings.weightedScore,
-            bayesian_score: data.ratings.bayesianScore,
-          }
-        : null,
-      plot_summary: slice === "" ? null : slice,
-      total_chars: fullSummary.length,
-      returned_chars: slice.length,
-      offset: args.offset,
-      next_offset: nextOffset,
-      truncated: nextOffset !== null,
       notes,
     };
+
+    if (basic) {
+      Object.assign(structured, basicFields(data, args, { slice, nextOffset, fullSummary }));
+    }
 
     if (wanted.has("cast")) {
       const kept = capCastAcrossLanguages(data.cast, CAPS.cast, notes);
@@ -436,20 +430,24 @@ function renderSummary(
     .join(" ");
 
   const lines = [header];
-  if (data.genres.length > 0) {
-    lines.push(`Genres: ${data.genres.join(", ")}`);
-  }
-  if (data.themes.length > 0) {
-    lines.push(`Themes: ${data.themes.join(", ")}`);
-  }
-  if (data.episodeCount) {
-    lines.push(`Episodes: ${data.episodeCount}`);
-  }
-  if (data.ratings?.weightedScore !== null && data.ratings?.weightedScore !== undefined) {
-    lines.push(`Rating: ${data.ratings.weightedScore} from ${data.ratings.votes ?? "?"} votes`);
-  }
-  if (plot) {
-    lines.push("", plot);
+  // The block mirrors the payload, so a field the payload withholds is absent
+  // here as well: printing it would withhold nothing.
+  if (wanted.has("basic")) {
+    if (data.genres.length > 0) {
+      lines.push(`Genres: ${data.genres.join(", ")}`);
+    }
+    if (data.themes.length > 0) {
+      lines.push(`Themes: ${data.themes.join(", ")}`);
+    }
+    if (data.episodeCount) {
+      lines.push(`Episodes: ${data.episodeCount}`);
+    }
+    if (data.ratings?.weightedScore !== null && data.ratings?.weightedScore !== undefined) {
+      lines.push(`Rating: ${data.ratings.weightedScore} from ${data.ratings.votes ?? "?"} votes`);
+    }
+    if (plot) {
+      lines.push("", plot);
+    }
   }
 
   // A section is printed, not announced: a text-only client that reads the
@@ -467,4 +465,37 @@ function renderSummary(
   lines.push(...renderListedSections(structured, wanted));
 
   return lines.join("\n");
+}
+
+/** Everything the 'basic' section covers, including the slice of the summary. */
+function basicFields(
+  data: TitleDetail,
+  args: GetTitleArgs,
+  summary: { slice: string; nextOffset: number | null; fullSummary: string },
+): Record<string, unknown> {
+  return {
+    alt_titles: data.altTitles,
+    genres: data.genres,
+    themes: data.themes,
+    episode_count: data.episodeCount,
+    running_time: data.runningTime,
+    objectionable_content: data.objectionableContent,
+    official_websites: data.officialWebsites,
+    picture_url: data.pictureUrl,
+    opening_themes: data.openingThemes,
+    ending_themes: data.endingThemes,
+    ratings: data.ratings
+      ? {
+          votes: data.ratings.votes,
+          weighted_score: data.ratings.weightedScore,
+          bayesian_score: data.ratings.bayesianScore,
+        }
+      : null,
+    plot_summary: summary.slice === "" ? null : summary.slice,
+    total_chars: summary.fullSummary.length,
+    returned_chars: summary.slice.length,
+    offset: args.offset,
+    next_offset: summary.nextOffset,
+    truncated: summary.nextOffset !== null,
+  };
 }
