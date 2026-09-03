@@ -62,7 +62,7 @@ Node 24 or later is required, and no environment variable has to be set.
   "mcpServers": {
     "animenewsnetwork": {
       "command": "docker",
-      "args": ["run", "-i", "--rm", "ghcr.io/smeet666/mcp-animenewsnetwork:2.0.1"]
+      "args": ["run", "-i", "--rm", "ghcr.io/smeet666/mcp-animenewsnetwork:3.0.0"]
     }
   }
 }
@@ -328,7 +328,7 @@ renseigner.
   "mcpServers": {
     "animenewsnetwork": {
       "command": "docker",
-      "args": ["run", "-i", "--rm", "ghcr.io/smeet666/mcp-animenewsnetwork:2.0.1"]
+      "args": ["run", "-i", "--rm", "ghcr.io/smeet666/mcp-animenewsnetwork:3.0.0"]
     }
   }
 }

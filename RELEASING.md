@@ -37,7 +37,7 @@ then on a leaked npm token cannot push a release of this package.
 
 ## Every release after that
 
-1. Bump the version in **six** places, which must stay in step:
+1. Bump the version in **eight** places, which must stay in step:
    - `package.json`
    - `package-lock.json`, whose root `version` field is easy to forget by hand
    - `server.json` (three times: the top-level `version`, the npm package
@@ -45,12 +45,15 @@ then on a leaked npm token cannot push a release of this package.
    - the `identifier` of that `mcpb` package, an address carrying the number
      twice, in the tag segment `/vX.Y.Z/` and in the file name
    - `packaging/manifest.json`, which a host reads before it installs anything
+   - `lhm.plugin.json`, which a directory reads for the same reason
    - `src/version.ts`, which feeds the User-Agent sent to ANN
+   - the container image tag in both halves of `README.md`, which a reader
+     copies into their own configuration
 
    `npm version patch --no-git-tag-version` covers the first two together, which
    is why it is preferred over editing `package.json` directly.
 
-   `test/unit/version.test.ts` holds the six against each other, so a place left
+   `test/unit/version.test.ts` and `test/unit/readme.test.ts` hold the eight against each other, so a place left
    behind turns the suite red before the tag is cut. The bundle address is the
    one the tag workflow uploads to, and a stale one leaves the registry serving
    the npm package while the built file stays unreachable.
@@ -60,7 +63,7 @@ then on a leaked npm token cannot push a release of this package.
 
 ```bash
 npm version patch --no-git-tag-version   # package.json + package-lock.json
-# then edit server.json, packaging/manifest.json and src/version.ts to match
+# then edit server.json, both manifests and src/version.ts to match
 npm test -- version                      # the six places agree
 git commit -am "Release v0.2.0"
 git tag v0.2.0

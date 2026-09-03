@@ -1,8 +1,8 @@
 # Changelog
 
-## Unreleased
+## 3.0.0
 
-Breaking, so the next release is a major one.
+Breaking, which is what makes this a major version.
 
 - **A news story carries every category the wire tags it with**, under
   `categories`, where it carried the first one alone under `category`. The wire
