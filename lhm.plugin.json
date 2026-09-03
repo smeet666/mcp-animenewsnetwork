@@ -78,40 +78,19 @@
                   "description": "Which get_title lookup this id belongs to."
                 },
                 "type": {
-                  "anyOf": [
-                    {
-                      "type": "string"
-                    },
-                    {
-                      "type": "null"
-                    }
-                  ],
-                  "description": "TV, movie, OAV, ONA, special, manga or novel."
+                  "description": "TV, movie, OAV, ONA, special, manga or novel.",
+                  "type": ["string", "null"]
                 },
                 "name": {
                   "type": "string"
                 },
                 "precision": {
-                  "anyOf": [
-                    {
-                      "type": "string"
-                    },
-                    {
-                      "type": "null"
-                    }
-                  ],
-                  "description": "Disambiguator the site shows next to the name, such as 'TV 2'."
+                  "description": "Disambiguator the site shows next to the name, such as 'TV 2'.",
+                  "type": ["string", "null"]
                 },
                 "vintage": {
-                  "anyOf": [
-                    {
-                      "type": "string"
-                    },
-                    {
-                      "type": "null"
-                    }
-                  ],
-                  "description": "Original release date or range, as published."
+                  "description": "Original release date or range, as published.",
+                  "type": ["string", "null"]
                 },
                 "source_url": {
                   "type": "string",
@@ -222,40 +201,19 @@
                 "description": "Which get_title lookup this id belongs to."
               },
               "type": {
-                "anyOf": [
-                  {
-                    "type": "string"
-                  },
-                  {
-                    "type": "null"
-                  }
-                ],
-                "description": "TV, movie, OAV, ONA, special, manga or novel."
+                "description": "TV, movie, OAV, ONA, special, manga or novel.",
+                "type": ["string", "null"]
               },
               "name": {
                 "type": "string"
               },
               "precision": {
-                "anyOf": [
-                  {
-                    "type": "string"
-                  },
-                  {
-                    "type": "null"
-                  }
-                ],
-                "description": "Disambiguator the site shows next to the name, such as 'TV 2'."
+                "description": "Disambiguator the site shows next to the name, such as 'TV 2'.",
+                "type": ["string", "null"]
               },
               "vintage": {
-                "anyOf": [
-                  {
-                    "type": "string"
-                  },
-                  {
-                    "type": "null"
-                  }
-                ],
-                "description": "Original release date or range, as published."
+                "description": "Original release date or range, as published.",
+                "type": ["string", "null"]
               },
               "source_url": {
                 "type": "string",
@@ -284,34 +242,13 @@
             }
           },
           "episode_count": {
-            "anyOf": [
-              {
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ]
+            "type": ["string", "null"]
           },
           "running_time": {
-            "anyOf": [
-              {
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ]
+            "type": ["string", "null"]
           },
           "objectionable_content": {
-            "anyOf": [
-              {
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ]
+            "type": ["string", "null"]
           },
           "official_websites": {
             "type": "array",
@@ -320,14 +257,7 @@
             }
           },
           "picture_url": {
-            "anyOf": [
-              {
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ]
+            "type": ["string", "null"]
           },
           "opening_themes": {
             "type": "array",
@@ -359,24 +289,10 @@
                     ]
                   },
                   "weighted_score": {
-                    "anyOf": [
-                      {
-                        "type": "number"
-                      },
-                      {
-                        "type": "null"
-                      }
-                    ]
+                    "type": ["number", "null"]
                   },
                   "bayesian_score": {
-                    "anyOf": [
-                      {
-                        "type": "number"
-                      },
-                      {
-                        "type": "null"
-                      }
-                    ]
+                    "type": ["number", "null"]
                   }
                 },
                 "required": ["votes", "weighted_score", "bayesian_score"],
@@ -388,14 +304,7 @@
             ]
           },
           "plot_summary": {
-            "anyOf": [
-              {
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ]
+            "type": ["string", "null"]
           },
           "total_chars": {
             "type": "integer",
@@ -453,15 +362,8 @@
                   ]
                 },
                 "lang": {
-                  "anyOf": [
-                    {
-                      "type": "string"
-                    },
-                    {
-                      "type": "null"
-                    }
-                  ],
-                  "description": "Language of this credit, such as 'JA' for the Japanese cast of a Japanese production or 'FR' for the French dub. Null when the site records none, which is not a claim that the credit is the original one."
+                  "description": "Language of this credit, such as 'JA' for the Japanese cast of a Japanese production or 'FR' for the French dub. Null when the site records none, which is not a claim that the credit is the original one.",
+                  "type": ["string", "null"]
                 }
               },
               "required": ["role", "person", "person_id", "lang"],
@@ -475,14 +377,7 @@
               "type": "object",
               "properties": {
                 "lang": {
-                  "anyOf": [
-                    {
-                      "type": "string"
-                    },
-                    {
-                      "type": "null"
-                    }
-                  ]
+                  "type": ["string", "null"]
                 },
                 "credits": {
                   "type": "integer",
@@ -559,24 +454,10 @@
                   "type": "string"
                 },
                 "title": {
-                  "anyOf": [
-                    {
-                      "type": "string"
-                    },
-                    {
-                      "type": "null"
-                    }
-                  ]
+                  "type": ["string", "null"]
                 },
                 "lang": {
-                  "anyOf": [
-                    {
-                      "type": "string"
-                    },
-                    {
-                      "type": "null"
-                    }
-                  ]
+                  "type": ["string", "null"]
                 }
               },
               "required": ["num", "title", "lang"],
@@ -592,24 +473,10 @@
                   "type": "string"
                 },
                 "date": {
-                  "anyOf": [
-                    {
-                      "type": "string"
-                    },
-                    {
-                      "type": "null"
-                    }
-                  ]
+                  "type": ["string", "null"]
                 },
                 "href": {
-                  "anyOf": [
-                    {
-                      "type": "string"
-                    },
-                    {
-                      "type": "null"
-                    }
-                  ]
+                  "type": ["string", "null"]
                 }
               },
               "required": ["name", "date", "href"],
@@ -651,14 +518,7 @@
                   "type": "string"
                 },
                 "date": {
-                  "anyOf": [
-                    {
-                      "type": "string"
-                    },
-                    {
-                      "type": "null"
-                    }
-                  ]
+                  "type": ["string", "null"]
                 }
               },
               "required": ["title", "href", "date"],
@@ -677,14 +537,7 @@
                   "type": "string"
                 },
                 "date": {
-                  "anyOf": [
-                    {
-                      "type": "string"
-                    },
-                    {
-                      "type": "null"
-                    }
-                  ]
+                  "type": ["string", "null"]
                 }
               },
               "required": ["title", "href", "date"],
@@ -792,54 +645,19 @@
                   "type": "string"
                 },
                 "type": {
-                  "anyOf": [
-                    {
-                      "type": "string"
-                    },
-                    {
-                      "type": "null"
-                    }
-                  ]
+                  "type": ["string", "null"]
                 },
                 "precision": {
-                  "anyOf": [
-                    {
-                      "type": "string"
-                    },
-                    {
-                      "type": "null"
-                    }
-                  ]
+                  "type": ["string", "null"]
                 },
                 "vintage": {
-                  "anyOf": [
-                    {
-                      "type": "string"
-                    },
-                    {
-                      "type": "null"
-                    }
-                  ]
+                  "type": ["string", "null"]
                 },
                 "date_added": {
-                  "anyOf": [
-                    {
-                      "type": "string"
-                    },
-                    {
-                      "type": "null"
-                    }
-                  ]
+                  "type": ["string", "null"]
                 },
                 "source_url": {
-                  "anyOf": [
-                    {
-                      "type": "string"
-                    },
-                    {
-                      "type": "null"
-                    }
-                  ]
+                  "type": ["string", "null"]
                 }
               },
               "required": [
@@ -951,25 +769,11 @@
                   "description": "Article URL. Show this when citing the story."
                 },
                 "summary": {
-                  "anyOf": [
-                    {
-                      "type": "string"
-                    },
-                    {
-                      "type": "null"
-                    }
-                  ]
+                  "type": ["string", "null"]
                 },
                 "published_at": {
-                  "anyOf": [
-                    {
-                      "type": "string"
-                    },
-                    {
-                      "type": "null"
-                    }
-                  ],
-                  "description": "ISO 8601 when the feed date could be parsed."
+                  "description": "ISO 8601 when the feed date could be parsed.",
+                  "type": ["string", "null"]
                 },
                 "categories": {
                   "type": "array",

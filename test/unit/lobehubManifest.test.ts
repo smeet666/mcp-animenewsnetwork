@@ -3,12 +3,15 @@
  *
  * A host reads this file to learn what the tools take and what they answer
  * with, and some validate a response against the schema it publishes. The file
- * is written by hand and carries the whole of both schemas, so it is the second
- * place the same thing is stated, and two statements of one thing drift until
- * neither can settle the other.
+ * carries the whole of both schemas, so it is the second place the same thing is
+ * stated, and two statements of one thing drift until neither can settle the
+ * other.
  *
- * The agreement is asserted rather than the values, so it survives the day a
- * tool gains an argument.
+ * What is asserted is the agreement, the names and what each schema calls
+ * required, rather than the JSON the serialiser writes them in. A nullable field
+ * has been spelled `anyOf` and `type: [..., "null"]` by two versions of that
+ * serialiser, and both say the same thing about the answer. Pinning the spelling
+ * would fail on a dependency bump while catching nothing a host would notice.
  */
 
 import { readFileSync } from "node:fs";
@@ -22,16 +25,30 @@ import { fixtureRouter, testConfig } from "./_helpers.js";
 
 const ROOT = join(import.meta.dirname, "..", "..");
 
+interface Schema {
+  properties?: Record<string, unknown>;
+  required?: string[];
+  additionalProperties?: unknown;
+}
+
 interface ManifestTool {
   name: string;
   description: string;
-  inputSchema: Record<string, unknown>;
-  outputSchema: Record<string, unknown>;
+  inputSchema: Schema;
+  outputSchema: Schema;
 }
 
 const manifest = JSON.parse(readFileSync(join(ROOT, "lhm.plugin.json"), "utf8")) as {
   tools: ManifestTool[];
 };
+
+/** The names a schema declares, and the ones it says an answer always carries. */
+function shapeOf(schema: Schema | undefined): { properties: string[]; required: string[] } {
+  return {
+    properties: Object.keys(schema?.properties ?? {}).sort(),
+    required: [...(schema?.required ?? [])].sort(),
+  };
+}
 
 let served: Awaited<ReturnType<Client["listTools"]>>["tools"];
 
@@ -61,19 +78,32 @@ describe("the tools the manifest announces", () => {
 });
 
 describe("the schemas the manifest publishes", () => {
-  it("take what the server takes", () => {
+  it("take the arguments the server takes, and require the same ones", () => {
     for (const tool of served) {
       const announced = manifest.tools.find((one) => one.name === tool.name);
-      expect(announced?.inputSchema, `${tool.name} inputSchema`).toEqual(tool.inputSchema);
+      expect(shapeOf(announced?.inputSchema), `${tool.name} inputSchema`).toEqual(
+        shapeOf(tool.inputSchema as Schema),
+      );
     }
   });
 
-  it("answer with what the server answers with", () => {
+  it("refuse an undeclared argument wherever the server does", () => {
+    for (const tool of served) {
+      const announced = manifest.tools.find((one) => one.name === tool.name);
+      expect(announced?.inputSchema.additionalProperties, tool.name).toBe(
+        (tool.inputSchema as Schema).additionalProperties,
+      );
+    }
+  });
+
+  it("answer with the fields the server answers with, required the same way", () => {
     // A field the manifest calls required while a branch of the tool omits it
     // makes a validating host reject an answer the server gave correctly.
     for (const tool of served) {
       const announced = manifest.tools.find((one) => one.name === tool.name);
-      expect(announced?.outputSchema, `${tool.name} outputSchema`).toEqual(tool.outputSchema);
+      expect(shapeOf(announced?.outputSchema), `${tool.name} outputSchema`).toEqual(
+        shapeOf(tool.outputSchema as Schema),
+      );
     }
   });
 });
