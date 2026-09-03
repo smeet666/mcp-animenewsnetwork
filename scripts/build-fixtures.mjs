@@ -82,6 +82,33 @@ function heavyChildren(seed) {
  * `attrs` and `extra` exist so a fixture can drop an attribute the parser needs
  * or add a section only one fixture cares about.
  */
+/**
+ * Heavy children each broken one way, alongside one that is whole.
+ *
+ * The site publishes records with a credit missing its role, an episode with no
+ * number, a linked article with no address. A parser that drops the record over
+ * one of them answers that the entry has no cast at all, so each is dropped on
+ * its own and the rest of the section survives.
+ */
+function brokenChildren(seed) {
+  return [
+    `<cast gid="210"><person id="1${seed}">Nameless Role ${HEAVY_MARKERS.castPerson}</person></cast>`,
+    `<cast gid="211"><role>${HEAVY_MARKERS.castRole} Unattributed</role></cast>`,
+    `<staff gid="206"><task>Storyboard</task></staff>`,
+    `<staff gid="207"><person id="2${seed}">Taskless ${HEAVY_MARKERS.staffPerson}</person></staff>`,
+    `<credit gid="378"><task>Production</task></credit>`,
+    `<episode><title gid="126" lang="EN">${HEAVY_MARKERS.episodeTitle} Unnumbered</title></episode>`,
+    `<release date="2015-01-01">Placeholder Release With No Address</release>`,
+    `<release href="${SITE}/encyclopedia/releases.php?id=1">   </release>`,
+    `<news datetime="1999-01-01T00:00:00Z">${HEAVY_MARKERS.newsHeadline} With No Address</news>`,
+    `<review href="${SITE}/review/nameless"></review>`,
+    `<related-next rel="alternate version"/>`,
+    `<related-prev id="9998"/>`,
+    `<info gid="442" type="Genres"></info>`,
+    `<info gid="249" type="Picture" width="10" height="10"/>`,
+  ].join("\n  ");
+}
+
 function record(options) {
   const {
     element = "anime",
@@ -93,6 +120,7 @@ function record(options) {
     vintage = "1998-04-03",
     withAttrs = true,
     heavy = true,
+    broken = false,
   } = options;
 
   const attrs = [
@@ -125,7 +153,7 @@ function record(options) {
   <info gid="7" type="Objectionable content">Mild</info>
   <info gid="8" type="Opening Theme">"Placeholder Opening Song ${seed}"</info>
   <info gid="9" type="Ending Theme">"Placeholder Ending Song ${seed}"</info>
-  ${heavy ? heavyChildren(seed) : ""}
+  ${heavy ? heavyChildren(seed) : ""}${broken ? `\n  ${brokenChildren(seed)}` : ""}
 </${element}>`;
 }
 
@@ -264,6 +292,15 @@ const FIXTURES = {
       record({ seed: 4, type: "movie", precision: "movie", heavy: false }),
     ].join("\n"),
   ),
+
+  /**
+   * A record whose heavy children are each unreadable in one way.
+   *
+   * One broken credit is not a broken record: dropping the entry over it would
+   * answer that the title has no cast, which is a different fact from the one
+   * the site published.
+   */
+  "title-broken-children.xml": ann(record({ seed: 1, broken: true })),
 
   /** A record with neither an id nor a name, alongside one that is complete. */
   "title-missing-attrs.xml": ann(
