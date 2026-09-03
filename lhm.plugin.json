@@ -126,7 +126,7 @@
             "type": "integer",
             "minimum": -9007199254740991,
             "maximum": 9007199254740991,
-            "description": "Matches before 'limit' was applied. Higher than results.length means narrow the query."
+            "description": "Rows this server could read, before 'limit' was applied. Higher than results.length means narrow the query."
           },
           "notes": {
             "type": "array",
@@ -152,7 +152,7 @@
     {
       "name": "get_title",
       "title": "Read an encyclopedia entry",
-      "description": "Read one Anime News Network encyclopedia entry by id. Get the id and kind from search_titles first. Sections are opt-in because a full record is very large: ask only for what you need. 'basic' covers type, vintage, genres, themes, episode count, ratings and the plot summary. Long plot summaries are paginated: when 'truncated' is true, call again with 'offset' set to 'next_offset'.",
+      "description": "Read one Anime News Network encyclopedia entry by id. Get the id and kind from search_titles first. Sections are opt-in because a full record is very large: ask only for what you need. The entry's name, kind, id and link come back whatever you ask for, so any answer can be cited. 'basic' covers type, vintage, genres, themes, episode count, ratings and the plot summary. Long plot summaries are paginated: when 'truncated' is true, call again with 'offset' set to 'next_offset'.",
       "inputSchema": {
         "type": "object",
         "properties": {
@@ -698,27 +698,7 @@
             }
           }
         },
-        "required": [
-          "title",
-          "alt_titles",
-          "genres",
-          "themes",
-          "episode_count",
-          "running_time",
-          "objectionable_content",
-          "official_websites",
-          "picture_url",
-          "opening_themes",
-          "ending_themes",
-          "ratings",
-          "plot_summary",
-          "total_chars",
-          "returned_chars",
-          "offset",
-          "next_offset",
-          "truncated",
-          "notes"
-        ],
+        "required": ["title", "notes"],
         "$schema": "http://json-schema.org/draft-07/schema#",
         "additionalProperties": false
       },
@@ -735,7 +715,7 @@
     {
       "name": "list_recent",
       "title": "List recent or browse alphabetically",
-      "description": "List what was added to the Anime News Network encyclopedia most recently: anime, manga, people or companies. Pass 'starts_with' to browse titles alphabetically instead, which only applies to anime and manga. Rows carry an id you can pass to get_title when the kind is anime or manga. This is a listing, not a search: use search_titles when you know what you are looking for.",
+      "description": "List what was added to the Anime News Network encyclopedia most recently: anime, manga, people or companies. Pass 'starts_with' to browse titles alphabetically instead, which only applies to anime and manga. Rows carry an id you can pass to get_title when the kind is anime or manga. This walks the catalogue in order: use search_titles when you know the title you are after.",
       "inputSchema": {
         "type": "object",
         "properties": {
@@ -748,6 +728,7 @@
           "starts_with": {
             "description": "Single letter. Switches to an alphabetical browse of titles. Anime and manga only.",
             "type": "string",
+            "minLength": 1,
             "maxLength": 1
           },
           "limit": {
@@ -934,7 +915,8 @@
           },
           "category": {
             "description": "Keep only items tagged this way, matched case-insensitively.",
-            "type": "string"
+            "type": "string",
+            "minLength": 1
           },
           "limit": {
             "default": 20,
@@ -989,18 +971,15 @@
                   ],
                   "description": "ISO 8601 when the feed date could be parsed."
                 },
-                "category": {
-                  "anyOf": [
-                    {
-                      "type": "string"
-                    },
-                    {
-                      "type": "null"
-                    }
-                  ]
+                "categories": {
+                  "type": "array",
+                  "items": {
+                    "type": "string"
+                  },
+                  "description": "Every tag the feed carries on the story. Empty when it carries none."
                 }
               },
-              "required": ["title", "link", "summary", "published_at", "category"],
+              "required": ["title", "link", "summary", "published_at", "categories"],
               "additionalProperties": false
             }
           },

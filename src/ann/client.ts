@@ -67,12 +67,14 @@ interface Parsed<T> {
  *
  * The count is stored with the answer, because the answer is cached. A gap
  * reported once and silent on every read served from memory afterwards would be
- * the same silence, an hour long.
+ * the same silence, an hour long. The log line is for an operator watching for a
+ * shape change upstream, and it is written on the read that measured the gap.
  */
-function withSkipCount<T>(run: (onSkip: OnSkip) => T): Parsed<T> {
+function withSkipCount<T>(logger: Logger, url: string, run: (onSkip: OnSkip) => T): Parsed<T> {
   let skipped = 0;
-  const data = run((dropped) => {
+  const data = run((dropped, total) => {
     skipped = dropped;
+    logger.info(`skipped ${dropped} of ${total} unreadable entries on ${url}`);
   });
   return skipped > 0 ? { data, skipped } : { data };
 }
@@ -150,7 +152,7 @@ export class AnnClient {
   async searchTitles(query: string): Promise<Outcome<TitleSummary[]>> {
     const url = titleSearchUrl(query);
     return await this.fetchParsed(url, this.encyclopediaCache, (body) =>
-      withSkipCount((onSkip) => parseTitleList(body, url, onSkip)),
+      withSkipCount(this.logger, url, (onSkip) => parseTitleList(body, url, onSkip)),
     );
   }
 
@@ -185,7 +187,7 @@ export class AnnClient {
   async getNews(feed: FeedName, edition: Edition): Promise<Outcome<NewsItem[]>> {
     const url = feedUrl(feed, edition);
     return await this.fetchParsed(url, this.newsCache, (body) =>
-      withSkipCount((onSkip) => parseFeed(body, url, onSkip)),
+      withSkipCount(this.logger, url, (onSkip) => parseFeed(body, url, onSkip)),
     );
   }
 

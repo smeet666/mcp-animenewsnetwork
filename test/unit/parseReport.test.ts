@@ -141,6 +141,21 @@ describe("parseReport", () => {
       expect(itemCount).toBe(5);
     });
 
+    it("leaves the catalogue unstated when the label names the other one", () => {
+      // reports.xml passes over a parameter it does not recognise, so a filter
+      // it stopped honouring would answer from both sides while every row still
+      // claimed the side that was asked for. A label naming the other catalogue
+      // is the only sign of that from inside one response.
+      const crossed = parseReport(mangaSideList, URL_TITLES_MANGA, { requestedKind: "anime" });
+      const labelledManga = crossed.rows.filter((row) => row.type === "manga");
+
+      expect(labelledManga.length).toBeGreaterThan(0);
+      for (const row of labelledManga) {
+        expect(row.kind, `row ${String(row.id)}`).toBeNull();
+        expect(row.sourceUrl, `row ${String(row.id)}`).toBeNull();
+      }
+    });
+
     it("files a row whose label belongs to no vocabulary under it as well", () => {
       // The labels are open, so the site can serve one this parser has never
       // been shown. The request settles the catalogue on its own, which is
@@ -169,22 +184,18 @@ describe("parseReport", () => {
       }
     });
 
-    it("files a row the site labels manga under an anime request", () => {
-      // Symmetry of the same trust: an anime-side answer carries anime ids
-      // whatever the label says about them.
+    it("holds the same trust the same way on the other side", () => {
+      // An anime-side answer carries anime ids, and its rows take that
+      // catalogue whether their label agrees or says nothing about it. A label
+      // naming the manga catalogue is the one case the request cannot settle.
       const anime = parseReport(titleList, URL_TITLES, { requestedKind: "anime" });
 
-      expect(anime.rows.map((row) => row.kind)).toEqual([
-        "anime",
-        "anime",
-        "anime",
-        "anime",
-        "anime",
-      ]);
-      expect(anime.rows[1]).toMatchObject({
-        type: "manga",
-        sourceUrl: `${SITE}/anime.php?id=40402`,
+      expect(anime.rows.map((row) => row.kind)).toEqual(["anime", null, "anime", null, "anime"]);
+      expect(anime.rows[0]).toMatchObject({
+        type: "TV",
+        sourceUrl: `${SITE}/anime.php?id=40401`,
       });
+      expect(anime.rows[1]).toMatchObject({ type: "manga", sourceUrl: null });
     });
 
     it("keeps the label the site published, whatever catalogue the row took", () => {

@@ -259,14 +259,7 @@ export async function runGetTitle(client: AnnClient, args: GetTitleArgs): Promis
       structured.reviews = capped(data.reviews, CAPS.reviews, "linked reviews", notes);
     }
 
-    for (const section of wanted) {
-      const value = structured[section === "staff" ? "staff" : section];
-      if (Array.isArray(value) && value.length === 0) {
-        notes.push(
-          `Anime News Network lists no ${section} for this entry, so the empty list is an absence rather than a failure to read it.`,
-        );
-      }
-    }
+    notes.push(...emptinessNotes(wanted, structured));
 
     return ok(structured, renderSummary(data, slice, wanted, structured), {
       notes,
@@ -498,4 +491,30 @@ function basicFields(
     next_offset: summary.nextOffset,
     truncated: summary.nextOffset !== null,
   };
+}
+
+/**
+ * What an answer holding little needs to say about why.
+ *
+ * An empty list and a section nobody asked for look alike once the answer is
+ * written, and a model reading either one without a word reports that the
+ * encyclopedia holds nothing.
+ */
+function emptinessNotes(wanted: Set<string>, structured: Record<string, unknown>): string[] {
+  if (wanted.size === 0) {
+    return [
+      "'sections' was empty, so this answer carries the entry and its link. Ask for 'basic' to read what the encyclopedia says about it.",
+    ];
+  }
+
+  const notes: string[] = [];
+  for (const section of wanted) {
+    const value = structured[section];
+    if (Array.isArray(value) && value.length === 0) {
+      notes.push(
+        `Anime News Network lists no ${section} for this entry, so the empty list is an absence rather than a failure to read it.`,
+      );
+    }
+  }
+  return notes;
 }

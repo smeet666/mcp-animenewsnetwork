@@ -1,5 +1,57 @@
 # Changelog
 
+## Unreleased
+
+Breaking, so the next release is a major one.
+
+- **A news story carries every category the wire tags it with**, under
+  `categories`, where it carried the first one alone under `category`. The wire
+  tags roughly one story in ten more than once, so a filter matched against the
+  first tag dropped stories the wire did tag the way that was asked for, the
+  count of what was available reported the remainder as the whole, and the note
+  listing what a feed carries could answer that no story is tagged a way while
+  stories carried it. The field is renamed in the tool output and on `NewsItem`,
+  which the `./client` entry point publishes.
+- **`get_title` serves the sections it was asked for.** The whole of `basic` came
+  back whatever the request named, so a caller asking for the news of an entry
+  paid for genres, themes, ratings and up to four thousand characters of plot
+  summary, and read a note offering to page a summary it had not asked for. Its
+  fields are declared optional in the result schema. The entry's name, kind, id
+  and link come back whatever was asked, since they are what a caller cites.
+
+Everything else here holds the same shapes.
+
+- **A title the encyclopedia files under a manga subtype is reported as a
+  manga.** The catalogue of a report row was read off the site's editorial label
+  with a single literal, so every manga labelled anything but "manga" was
+  reported as an anime and linked into a namespace that holds no such id.
+- **A related entry carries no link.** The row names an id whose catalogue the
+  site does not state, and the two catalogues share one integer range, so the
+  link was built on the catalogue of the entry being read. Verified on the site:
+  an anime adapted from a manga points at the manga's id.
+- **A release, a news item and a review carry their address in the text block.**
+  The renderer looked for the address under names no row uses, so a text-only
+  client showed headlines nobody could open or cite.
+- **A `Retry-After` the site sends is served for the whole of what it names**,
+  where it was shortened to twenty seconds, and the waits one call spends on the
+  site's instruction share one budget.
+- **An empty body under HTTP 200 is reported as a network error**, where it was
+  reported as rate limiting, which had a caller slow its pacing for a fault
+  unrelated to pacing.
+- **A refusal raised inside a list of values carries the error code** every other
+  refusal opens with.
+- **A `kind` restriction that removes every match says so**, naming how many rows
+  the encyclopedia returned and which catalogue they are in, where the answer
+  read as a query the encyclopedia matched nothing for.
+- **A restriction sent as an empty string, or as spaces, is refused** before a
+  request goes out, where it was read as no restriction and answered with
+  everything.
+- **Entries the site published and this client could not read are counted** in
+  the answer, so a page holding fewer rows than the site sent says so.
+- **The registry descriptor and the plugin manifest are held to the server by a
+  test.** The first announced three of the eight settings the code reads, and the
+  second still described an older result shape.
+
 ## 2.0.1
 
 - **Every tool is documented, with its arguments and what its answer carries.**

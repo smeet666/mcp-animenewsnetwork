@@ -131,13 +131,6 @@ function toSummary(element: XmlElement, kind: TitleKind): TitleSummary | null {
   };
 }
 
-/**
- * Reported when records had to be dropped.
- *
- * A gap between what the site sent and what could be read is how a shape change
- * announces itself, so it must not be silent. It goes through the caller's
- * logger rather than straight to stderr, so it honours ANN_LOG_LEVEL.
- */
 /** Search results, reduced to rows. Everything heavy is dropped here. */
 export function parseTitleList(xml: string, url: string, onSkip?: OnSkip): TitleSummary[] {
   const root = expectRoot(parseDocument(xml, url), EL.root, url);

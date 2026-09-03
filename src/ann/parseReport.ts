@@ -118,10 +118,20 @@ function readTitleItem(item: XmlElement, requestedKind: TitleKind | undefined): 
   const parsedId = rawId === null ? Number.NaN : Number.parseInt(rawId, 10);
   const id = Number.isFinite(parsedId) ? parsedId : null;
   const type = childText(item, REPORT_EL.type);
+  const labelled = kindFromLabel(type);
   // A request that named a catalogue was answered from that catalogue alone, so
   // it decides the row. Unfiltered, this report mixes both and the label is the
   // only hint a row carries.
-  const kind = requestedKind ?? kindFromLabel(type);
+  //
+  // A label naming the other catalogue outright is the one thing that unsettles
+  // this: reports.xml passes over a parameter it does not recognise, so a filter
+  // it stopped honouring would answer from both sides while every row still
+  // claimed the side that was asked for. The row is kept, since its name and its
+  // label are true either way, and its catalogue is left unstated so no link is
+  // built on a filter the response itself contradicts.
+  const contradicted =
+    requestedKind !== undefined && labelled !== null && labelled !== requestedKind;
+  const kind = contradicted ? null : (requestedKind ?? labelled);
 
   return {
     id,

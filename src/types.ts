@@ -101,8 +101,9 @@ export interface TitleDetail extends TitleSummary {
  * How a parser reports entries it read past.
  *
  * A parser drops an entry it cannot turn into a row, and the difference between
- * what the site sent and what came out is a fact about the answer. Reporting it
- * lets a caller state the gap, so the remainder is never served as the whole.
+ * what the site sent and what came out is a fact about the answer, and how a
+ * shape change upstream announces itself. Reporting it lets a caller state the
+ * gap, so the remainder is never served as the whole.
  */
 export type OnSkip = (skipped: number, total: number) => void;
 

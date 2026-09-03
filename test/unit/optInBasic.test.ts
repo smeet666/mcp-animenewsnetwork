@@ -114,6 +114,14 @@ describe("a request that names sections without 'basic'", () => {
     }
     expect(structured.title).toBeDefined();
   });
+
+  it("says why an answer to an empty list of sections is thin", async () => {
+    // Silence here reads as an entry the encyclopedia holds little about, which
+    // is a different fact from the one the request produced.
+    const { structured } = await getTitle({ sections: [] });
+
+    expect((structured.notes as string[]).join(" ")).toMatch(/'sections' was empty/);
+  });
 });
 
 describe("a request that asks for 'basic'", () => {
