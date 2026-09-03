@@ -139,7 +139,11 @@ export class AnnClient {
     startsWith?: string;
   }): Promise<Outcome<ReportPage>> {
     const url = titleListReportUrl(options);
-    return await this.fetchParsed(url, this.encyclopediaCache, (body) => parseReport(body, url));
+    // The parser reads the catalogue from the same value that filtered the
+    // request, so the URL and the rows it produces cannot disagree.
+    return await this.fetchParsed(url, this.encyclopediaCache, (body) =>
+      parseReport(body, url, options.type ? { requestedKind: options.type } : {}),
+    );
   }
 
   async getNews(feed: FeedName, edition: Edition): Promise<Outcome<NewsItem[]>> {

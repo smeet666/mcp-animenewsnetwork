@@ -133,15 +133,26 @@ function ann(body) {
   return `<?xml version="1.0" encoding="UTF-8"?>\n<ann>\n${body}\n</ann>\n`;
 }
 
-/** Shape A: report 155, which lists titles with their fields as elements. */
-function titleListItem(seed) {
+/**
+ * Shape A: report 155, which lists titles with their fields as elements.
+ *
+ * `type` carries the site's own editorial label, which is hand-maintained and
+ * open-ended. Passing `null` for it writes an item with no `<type>` element at
+ * all, which covers a shape the parser has to tolerate.
+ */
+function titleListItem(seed, overrides = {}) {
+  const {
+    type = seed % 2 === 0 ? "manga" : "TV",
+    precision = seed % 2 === 0 ? "manga" : `TV ${seed}`,
+  } = overrides;
+
   return `<item>
     <id>${40_400 + seed}</id>
-    <gid>383109600${seed}</gid>
-    <type>${seed % 2 === 0 ? "manga" : "TV"}</type>
+    <gid>${3_831_096_000 + seed}</gid>
+    ${type === null ? "" : `<type>${type}</type>`}
     <name>Placeholder Listed Title ${seed}</name>
-    <precision>${seed % 2 === 0 ? "manga" : `TV ${seed}`}</precision>
-    <vintage>2026-08-0${seed}</vintage>
+    <precision>${precision}</precision>
+    <vintage>2026-08-${String(seed).padStart(2, "0")}</vintage>
     <unknown-column>noise the parser must ignore</unknown-column>
   </item>`;
 }
@@ -252,7 +263,50 @@ const FIXTURES = {
   "warning-ignored.xml": ann("<warning>ignored </warning>"),
 
   /** Report 155: titles with their fields as child elements. */
-  "report-title-list.xml": report([1, 2, 3, 4, 5].map(titleListItem)),
+  "report-title-list.xml": report([1, 2, 3, 4, 5].map((seed) => titleListItem(seed))),
+
+  /**
+   * Report 155 as the site answers it with `type=manga` in the query string.
+   *
+   * The site's filter is authoritative for every row it returns, while the
+   * `<type>` element carries an editorial label describing the format of the
+   * work. The two say different things: an anthology is served on the manga
+   * side, and so is a label belonging to no published vocabulary, since that
+   * vocabulary is open. Only the filter places that last row, which is what
+   * makes this fixture tell a filtered read apart from a label read.
+   */
+  "report-title-list-manga.xml": report([
+    titleListItem(1, { type: "manga", precision: "manga" }),
+    titleListItem(2, { type: "manga", precision: "manga" }),
+    titleListItem(3, { type: "anthology", precision: "anthology" }),
+    titleListItem(4, { type: "manga", precision: "manga" }),
+    titleListItem(5, { type: "hypothetical-format", precision: "hypothetical-format" }),
+  ]),
+
+  /**
+   * Report 155 as the site answers it with no type in the query string, where
+   * the two catalogues arrive mixed and the `<type>` element is the only hint.
+   *
+   * The eight labels observed on the live report are here, six on the anime
+   * side and two on the manga side. The last two items carry what the label
+   * cannot answer: a value belonging to no known list, and no element at all.
+   * "hypothetical-format" is deliberately not a word the site writes, so a
+   * reader cannot mistake it for a vocabulary entry to add somewhere. A third
+   * unanswerable row carries the element with nothing inside it.
+   */
+  "report-title-list-mixed.xml": report([
+    titleListItem(1, { type: "TV", precision: "TV 1" }),
+    titleListItem(2, { type: "movie", precision: "movie" }),
+    titleListItem(3, { type: "ONA", precision: "ONA" }),
+    titleListItem(4, { type: "OAV", precision: "OAV 2" }),
+    titleListItem(5, { type: "special", precision: "special" }),
+    titleListItem(6, { type: "omnibus", precision: "omnibus" }),
+    titleListItem(7, { type: "manga", precision: "manga" }),
+    titleListItem(8, { type: "anthology", precision: "anthology" }),
+    titleListItem(9, { type: "hypothetical-format", precision: "hypothetical-format" }),
+    titleListItem(10, { type: null, precision: "manga" }),
+    titleListItem(11, { type: "", precision: "TV 11" }),
+  ]),
 
   /** Report 148: recently added anime, where the id lives in the href. */
   "report-recent-anime.xml": report([1, 2, 3].map((seed) => recentItem("anime", seed))),
