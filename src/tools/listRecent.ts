@@ -15,7 +15,7 @@ export const listRecentDescription = [
   "List what was added to the Anime News Network encyclopedia most recently: anime, manga, people or companies.",
   "Pass 'starts_with' to browse titles alphabetically instead, which only applies to anime and manga.",
   "Rows carry an id you can pass to get_title when the kind is anime or manga.",
-  "This is a listing, not a search: use search_titles when you know what you are looking for.",
+  "This walks the catalogue in order: use search_titles when you know the title you are after.",
 ].join(" ");
 
 export const listRecentInputShape = {
@@ -25,6 +25,8 @@ export const listRecentInputShape = {
     .describe("Which catalogue to list."),
   starts_with: z
     .string()
+    .trim()
+    .min(1)
     .max(1)
     .optional()
     .describe("Single letter. Switches to an alphabetical browse of titles. Anime and manga only."),
@@ -56,7 +58,8 @@ export interface ListRecentArgs {
 
 export async function runListRecent(client: AnnClient, args: ListRecentArgs): Promise<ToolResult> {
   try {
-    const browsing = args.starts_with !== undefined && args.starts_with !== "";
+    // The schema bounds the letter, so an argument that arrives here carries one.
+    const browsing = args.starts_with !== undefined;
     if (browsing && args.kind !== "anime" && args.kind !== "manga") {
       throw invalidInput(
         `'starts_with' browses titles, so it does not apply to kind="${args.kind}".`,

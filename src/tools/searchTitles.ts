@@ -36,7 +36,7 @@ export const searchTitlesOutputShape = {
     .number()
     .int()
     .describe(
-      "Matches before 'limit' was applied. Higher than results.length means narrow the query.",
+      "Rows this server could read, before 'limit' was applied. Higher than results.length means narrow the query.",
     ),
   notes: z.array(z.string()),
 };
@@ -52,31 +52,46 @@ export async function runSearchTitles(
   args: SearchTitlesArgs,
 ): Promise<ToolResult> {
   try {
-    const { data, cached } = await client.searchTitles(args.query);
+    const { data, cached, skipped } = await client.searchTitles(args.query);
 
-    const filtered =
-      args.kind === "both" ? data : data.filter((title) => title.kind === (args.kind as TitleKind));
+    const restricted = args.kind !== "both";
+    const filtered = restricted
+      ? data.filter((title) => title.kind === (args.kind as TitleKind))
+      : data;
     const results = filtered.slice(0, args.limit).map(toTitleSummaryOut);
+
+    // An answer emptied by the restriction and one the encyclopedia matched
+    // nothing for read the same way once the rows are gone, and they call for
+    // opposite next moves: widen the restriction, or shorten the query.
+    const emptiedByKind = restricted && filtered.length === 0 && data.length > 0;
+    const kindsMatched = [...new Set(data.map((title) => title.kind))].join(" and ");
 
     const notes: string[] = [];
     if (cached) {
       notes.push("Served from this server's short-lived in-memory cache.");
+    }
+    if (skipped) {
+      notes.push(
+        `${skipped} ${skipped === 1 ? "record" : "records"} the encyclopedia returned could not be read and are absent from these figures.`,
+      );
     }
     if (filtered.length > results.length) {
       notes.push(
         `${filtered.length} entries matched and ${results.length} are shown. Narrow the query for a more useful set.`,
       );
     }
-    if (results.length === 0) {
+    if (emptiedByKind) {
+      notes.push(
+        `The encyclopedia matched ${data.length} ${data.length === 1 ? "entry" : "entries"} and the 'kind' restriction removed all of them: they are ${kindsMatched}. ` +
+          `Drop 'kind', or set it to ${kindsMatched}.`,
+      );
+    } else if (results.length === 0) {
       notes.push(
         "No entry matched. The encyclopedia matches on the title only, so try a shorter fragment of it.",
       );
     }
 
-    const summary =
-      results.length === 0
-        ? `No encyclopedia entry matched "${args.query}".`
-        : `${results.length} entr${results.length === 1 ? "y" : "ies"} for "${args.query}":\n${renderTitleList(results)}`;
+    const summary = summarise(args, data.length, kindsMatched, emptiedByKind, results);
 
     return ok({ query: args.query, results, total_available: filtered.length, notes }, summary, {
       notes,
@@ -84,4 +99,29 @@ export async function runSearchTitles(
   } catch (error) {
     return toToolError(error);
   }
+}
+
+/**
+ * The sentence a caller reads first.
+ *
+ * Three answers look alike once the rows are gone and call for different next
+ * moves: rows to read, a query the encyclopedia matched nothing for, and an
+ * answer the 'kind' restriction emptied.
+ */
+function summarise(
+  args: SearchTitlesArgs,
+  matched: number,
+  kindsMatched: string,
+  emptiedByKind: boolean,
+  results: ReturnType<typeof toTitleSummaryOut>[],
+): string {
+  if (emptiedByKind) {
+    const noun = matched === 1 ? "entry" : "entries";
+    return `No ${args.kind} entry for "${args.query}". The encyclopedia matched ${matched} ${kindsMatched} ${noun} under that name.`;
+  }
+  if (results.length === 0) {
+    return `No encyclopedia entry matched "${args.query}".`;
+  }
+  const noun = results.length === 1 ? "entry" : "entries";
+  return `${results.length} ${noun} for "${args.query}":\n${renderTitleList(results)}`;
 }

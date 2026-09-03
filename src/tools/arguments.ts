@@ -38,6 +38,16 @@ export function strictInput<Shape extends z.ZodRawShape>(shape: Shape) {
 }
 
 /**
+ * The fields a composite schema names its children under.
+ *
+ * A refusal is raised by whichever schema holds the rule that was broken, and
+ * the set an argument reads can be declared a level or more below the argument
+ * itself. Naming the fields as data means a shape declared later is walked by
+ * the same rule.
+ */
+const CHILD_FIELDS = ["innerType", "element", "valueType", "keyType"] as const;
+
+/**
  * Route every refusal a declared argument can raise through one error map.
  *
  * A bound such as `min` raises its issue from the check that holds it, and the
@@ -46,23 +56,32 @@ export function strictInput<Shape extends z.ZodRawShape>(shape: Shape) {
  * that keeps a check's identity, hence the assignment. It is confined to
  * schemas built for a declaration and handed to this function, which is the
  * whole of what a tool module does with them.
+ *
+ * The walk descends into the children a composite names, because an argument
+ * declared as a list of a set refuses from the set: a map written on the list
+ * alone leaves that refusal in the validator's own vocabulary, with no code for
+ * a caller to branch on.
  */
 function carryTheCode(schema: z.core.$ZodType, refuse: z.core.$ZodErrorMap): void {
   const definition = schema._zod.def as {
     error?: unknown;
     checks?: Array<{ _zod: { def: { error?: unknown } } }>;
-    innerType?: z.core.$ZodType;
-  };
+    options?: z.core.$ZodType[];
+  } & Partial<Record<(typeof CHILD_FIELDS)[number], z.core.$ZodType>>;
 
   definition.error = refuse;
   for (const check of definition.checks ?? []) {
     check._zod.def.error = refuse;
   }
 
-  // A default, an optional or any other wrapper answers for its own shape and
-  // leaves the bounds to the type it wraps.
-  if (definition.innerType) {
-    carryTheCode(definition.innerType, refuse);
+  for (const field of CHILD_FIELDS) {
+    const child = definition[field];
+    if (child) {
+      carryTheCode(child, refuse);
+    }
+  }
+  for (const option of definition.options ?? []) {
+    carryTheCode(option, refuse);
   }
 }
 

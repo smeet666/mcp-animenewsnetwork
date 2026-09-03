@@ -257,6 +257,23 @@ describe("the settings", () => {
     }
   });
 
+  it("are announced in full to a host that configures from the registry", () => {
+    // A host installing from the registry entry renders the fields that entry
+    // declares. A setting missing there is a setting the user cannot reach,
+    // whatever the README says about it.
+    const pattern = new RegExp(`\\b(${ENV_PREFIX}[A-Z_]+)\\b`, "g");
+    const read = [...configSource.matchAll(pattern)].map((match) => match[1] as string);
+    const registry = JSON.parse(readFileSync(join(ROOT, "server.json"), "utf8")) as {
+      packages: { registryType: string; environmentVariables?: { name: string }[] }[];
+    };
+    const npmPackage = registry.packages.find((each) => each.registryType === "npm");
+    const declared = (npmPackage?.environmentVariables ?? []).map((each) => each.name);
+
+    expect([...new Set(declared)].sort(alphabetically)).toEqual(
+      [...new Set(read)].sort(alphabetically),
+    );
+  });
+
   it("announce the value that changes nothing when it is set", () => {
     const untouched = loadConfig({});
     const rows = tableRows(english.slice(english.indexOf("## Configuration")), "Variable");

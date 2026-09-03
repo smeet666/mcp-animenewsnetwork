@@ -49,10 +49,10 @@ Content & Media
 - "What is Cowboy Bebop about, and who directed it?"
 - "Give me the Japanese cast of Attack on Titan"
 - "What anime were added to the encyclopedia this week?"
-- Tool: search_titles — Finds an encyclopedia entry by title, returning its id and kind
-- Tool: get_title — Reads one entry, only the sections you ask for
-- Tool: list_recent — Browses recent additions, by title or by person
-- Tool: get_news — Reads the news wire
+- Tool: search_titles. Finds an encyclopedia entry by title, returning its id and kind
+- Tool: get_title. Reads one entry, only the sections you ask for
+- Tool: list_recent. Browses recent additions, by title or by person
+- Tool: get_news. Reads the news wire
 
 ## Tags
 

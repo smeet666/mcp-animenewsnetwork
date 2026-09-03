@@ -29,6 +29,10 @@ export const getNewsInputShape = {
     .describe("Regional edition. They differ mostly in release and licensing coverage."),
   category: z
     .string()
+    // The trim runs before the bound, so a value of spaces is refused. Bounding
+    // first would accept it and hand the tool an empty restriction to drop.
+    .trim()
+    .min(1)
     .optional()
     .describe("Keep only items tagged this way, matched case-insensitively."),
   limit: z.number().int().min(1).max(100).default(20).describe("How many stories to return."),
@@ -54,7 +58,7 @@ export interface GetNewsArgs {
 
 export async function runGetNews(client: AnnClient, args: GetNewsArgs): Promise<ToolResult> {
   try {
-    const { data, cached } = await client.getNews(args.feed, args.edition);
+    const { data, cached, skipped } = await client.getNews(args.feed, args.edition);
 
     const wanted = args.category?.trim().toLowerCase();
     const filtered = wanted ? data.filter((item) => item.category?.toLowerCase() === wanted) : data;
@@ -63,6 +67,11 @@ export async function runGetNews(client: AnnClient, args: GetNewsArgs): Promise<
     const notes: string[] = [];
     if (cached) {
       notes.push("Served from this server's short-lived in-memory cache.");
+    }
+    if (skipped) {
+      notes.push(
+        `${skipped} ${skipped === 1 ? "entry" : "entries"} the wire published could not be read and are absent from these figures.`,
+      );
     }
     if (filtered.length > items.length) {
       notes.push(

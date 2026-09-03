@@ -8,17 +8,29 @@
  *
  * Statuses are still read where they carry meaning: 503 is what the site returns
  * when a caller goes over one request per second, and 403 is how an edge blocks
- * a client it dislikes. Both are refusals to back off from rather than errors to
- * report, and `Retry-After` is honoured when the site sends one.
+ * a client it dislikes. Both are refusals to back off from, and a `Retry-After`
+ * the site sends is served for the whole of what it names. The waits the site
+ * asks for share one budget across the call: once the total would pass it, the
+ * chain ends and the figure the site sent is handed back, so the wait the caller
+ * is told about is the wait this client observed.
  */
 
 import type { Config, Logger } from "../config.js";
-import { AnnError, rateLimited, upstreamError } from "../errors.js";
+import { AnnError, emptyResponse, rateLimited, upstreamError } from "../errors.js";
 import { type RateLimiter, sleep } from "./rateLimiter.js";
 
 const BACKOFF_BASE_MS = 2000;
 const BACKOFF_FACTOR = 2;
 const BACKOFF_MAX_MS = 20_000;
+
+// The budget one call may spend sleeping on the site's own instruction, counted
+// across every refusal it meets. A tool call that blocks beyond a minute reads
+// as a hang to whoever is waiting on it, so a wait that would carry the total
+// past this figure ends the chain and is reported, leaving the caller free to
+// come back when the site said to. The client's own backoff guess is spent
+// outside this budget: BACKOFF_MAX_MS and ANN_MAX_RETRIES bound it, and both are
+// an operator's to set, while the figure a site names is bounded by nothing.
+const RETRY_AFTER_MAX_MS = 60_000;
 
 /** Exponential backoff with jitter, so parallel clients do not resynchronise. */
 export function backoffDelay(attempt: number, random: () => number = Math.random): number {
@@ -53,9 +65,14 @@ export async function fetchText(url: string, deps: HttpDeps): Promise<string> {
     // wait is ever served after the last attempt, when nobody would use it.
     let askedWaitMs: number | null = null;
 
+    // What the waits the site asked for have already cost this call. They share
+    // one RETRY_AFTER_MAX_MS budget, so a chain of refusals each naming a wait
+    // inside the ceiling cannot hold a caller for a multiple of it.
+    let servedAskedWaitMs = 0;
+
     for (let attempt = 0; attempt <= config.maxRetries; attempt += 1) {
       if (attempt > 0) {
-        const delay = Math.min(askedWaitMs ?? backoffDelay(attempt - 1), BACKOFF_MAX_MS);
+        const delay = askedWaitMs ?? backoffDelay(attempt - 1);
         askedWaitMs = null;
         logger.info(`retry ${attempt}/${config.maxRetries} in ${delay}ms for ${url}`);
         await sleep(delay);
@@ -85,12 +102,13 @@ export async function fetchText(url: string, deps: HttpDeps): Promise<string> {
 
       if (status === 429 || status === 503 || status === 403) {
         limiter.penalize();
-        // A server that says when to come back knows better than our own guess.
-        askedWaitMs = retryAfterMs;
-        lastError = rateLimited(url, retryAfterMs ?? backoffDelay(attempt));
         logger.info(
           `refused on ${url} with ${status}, interval now ${limiter.currentIntervalMs}ms`,
         );
+        const refusal = standDown(url, retryAfterMs, attempt, servedAskedWaitMs);
+        askedWaitMs = refusal.waitMs;
+        servedAskedWaitMs += refusal.waitMs ?? 0;
+        lastError = refusal.error;
         continue;
       }
       if (status >= 500) {
@@ -102,12 +120,12 @@ export async function fetchText(url: string, deps: HttpDeps): Promise<string> {
       }
 
       // An empty body is not a valid answer from any of these endpoints, and is
-      // how a stressed CDN sometimes refuses. Retrying is safer than handing an
+      // how a stressed edge sometimes answers. Retrying is safer than handing an
       // empty document to the parser, which would read as "nothing found".
       if (body.trim() === "") {
         limiter.penalize();
-        lastError = rateLimited(url, backoffDelay(attempt));
-        logger.info(`empty body on ${url}, treating as rate limiting`);
+        lastError = emptyResponse(url);
+        logger.info(`empty body on ${url}, interval now ${limiter.currentIntervalMs}ms`);
         continue;
       }
 
@@ -117,6 +135,33 @@ export async function fetchText(url: string, deps: HttpDeps): Promise<string> {
 
     throw lastError ?? new AnnError("network_error", `Could not fetch ${url}.`, { url });
   });
+}
+
+/**
+ * What to do about a refusal: how long to stay away, and the error to hand back
+ * if the attempts run out.
+ *
+ * A server that says when to come back knows better than our own guess, so a
+ * wait it names is served for the whole of what it names, as long as the call
+ * still has budget for it. `servedAskedWaitMs` is what earlier refusals in this
+ * chain already cost, and a wait carrying that total past RETRY_AFTER_MAX_MS is
+ * raised to the caller: sleeping a trimmed version of it would put the next
+ * request inside the very window the site asked to be left alone in, while
+ * telling the caller a figure this client did not observe.
+ */
+function standDown(
+  url: string,
+  retryAfterMs: number | null,
+  attempt: number,
+  servedAskedWaitMs: number,
+): { waitMs: number | null; error: AnnError } {
+  if (retryAfterMs === null) {
+    return { waitMs: null, error: rateLimited(url, backoffDelay(attempt)) };
+  }
+  if (servedAskedWaitMs + retryAfterMs > RETRY_AFTER_MAX_MS) {
+    throw rateLimited(url, retryAfterMs);
+  }
+  return { waitMs: retryAfterMs, error: rateLimited(url, retryAfterMs) };
 }
 
 /** `Retry-After` carries either seconds or an HTTP date. */

@@ -382,28 +382,41 @@ function renderEpisodes(structured: Record<string, unknown>): string[] {
  *
  * A text-only client that reads a promise of a section has paid a request for
  * nothing, so a section with rows is written out and one without is left off.
+ * Each section is written from the fields its own rows carry, and a row that
+ * holds an address ends on it, so a reader can open the page and credit the
+ * site by it.
  */
 function renderListedSections(structured: Record<string, unknown>, wanted: Set<string>): string[] {
   const lines: string[] = [];
 
-  for (const [section, label] of [
-    ["releases", "Releases"],
-    ["related", "Related"],
-    ["news", "News"],
-    ["reviews", "Reviews"],
-  ] as const) {
-    const rows = (structured[section] ?? []) as Record<string, unknown>[];
-    if (!wanted.has(section) || rows.length === 0) {
-      continue;
+  const section = <Row>(name: string, label: string, renderRow: (row: Row) => string): void => {
+    const rows = (structured[name] ?? []) as Row[];
+    if (!wanted.has(name) || rows.length === 0) {
+      return;
     }
+    lines.push("", `${label}:`, ...rows.map((row) => `  ${renderRow(row)}`));
+  };
 
-    lines.push("", `${label}:`);
-    for (const row of rows) {
-      const title = (row.title ?? row.name ?? row.story ?? "") as string;
-      const link = (row.link ?? row.url ?? row.sourceUrl ?? "") as string;
-      lines.push(`  ${title || JSON.stringify(row)}${link ? ` — ${link}` : ""}`);
-    }
-  }
+  const renderLinked = (row: z.infer<typeof linkedSchema>): string =>
+    [row.title, row.date, row.href].filter(Boolean).join(" · ");
+
+  section<z.infer<typeof releaseSchema>>("releases", "Releases", (row) =>
+    [row.name, row.date, row.href].filter(Boolean).join(" · "),
+  );
+  // A related row states an id and the side it sits on, and the site states
+  // nothing about the catalogue that holds that id. Anime ids and manga ids
+  // share one integer range, so an address built here would name a catalogue
+  // by guessing, and it would reach an unrelated entry or nothing at all. The
+  // id is printed for a caller to resolve.
+  section<z.infer<typeof relatedSchema>>("related", "Related", (row) =>
+    [
+      row.relation,
+      row.direction === "prev" ? "this entry came from it" : "came out of this entry",
+      `id: ${row.id}`,
+    ].join(" · "),
+  );
+  section<z.infer<typeof linkedSchema>>("news", "News", renderLinked);
+  section<z.infer<typeof linkedSchema>>("reviews", "Reviews", renderLinked);
 
   return lines;
 }

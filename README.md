@@ -215,7 +215,7 @@ and its errors, and with no protocol attached.
 import { AnnClient } from "mcp-animenewsnetwork/client";
 
 const client = new AnnClient();
-const { data, cached } = await client.getTitle({ id: 1, kind: "anime" });
+const { data, cached } = await client.getTitle("anime", 1);
 console.log(data.name, cached);
 ```
 
@@ -480,7 +480,7 @@ erreurs, sans protocole attaché.
 import { AnnClient } from "mcp-animenewsnetwork/client";
 
 const client = new AnnClient();
-const { data, cached } = await client.getTitle({ id: 1, kind: "anime" });
+const { data, cached } = await client.getTitle("anime", 1);
 console.log(data.name, cached);
 ```
 

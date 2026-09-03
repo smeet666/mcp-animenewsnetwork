@@ -241,6 +241,21 @@ const FIXTURES = {
     ].join("\n"),
   ),
 
+  /**
+   * A name search the encyclopedia answers entirely from one catalogue.
+   *
+   * Restricting such an answer to the other catalogue leaves nothing, and the
+   * absence is the server's own doing. The fixture exists so a tool can be held
+   * to saying which of the two emptied the set.
+   */
+  "search-results-anime-only.xml": ann(
+    [
+      record({ seed: 1, heavy: false }),
+      record({ seed: 2, type: "OAV", precision: "OAV", heavy: false }),
+      record({ seed: 4, type: "movie", precision: "movie", heavy: false }),
+    ].join("\n"),
+  ),
+
   /** A record with neither an id nor a name, alongside one that is complete. */
   "title-missing-attrs.xml": ann(
     [
@@ -368,6 +383,24 @@ const FIXTURES = {
       feedItem({ seed: 4, pubDate: "sometime last Thursday" }),
       feedItem({ seed: 5, description: MARKUP_DESCRIPTION }),
       feedItem({ seed: 6, description: MARKUP_ONLY_DESCRIPTION }),
+    ].join("\n"),
+  ),
+
+  /**
+   * A channel where two entries carry no link.
+   *
+   * A headline with no address cannot be attributed, so the entry is dropped,
+   * and the count of what was dropped is the difference between what the wire
+   * published and what a reader is shown.
+   */
+  "feed-partial.xml": rss(
+    [
+      CHANNEL_HEADER,
+      feedItem({ seed: 1 }),
+      feedItem({ seed: 2, link: "" }),
+      feedItem({ seed: 3, category: "Anime" }),
+      feedItem({ seed: 4, link: "" }),
+      feedItem({ seed: 5 }),
     ].join("\n"),
   ),
 

@@ -22,6 +22,7 @@ import type {
   TitleKind,
   TitleSummary,
 } from "../types.js";
+import type { OnSkip } from "../types.js";
 import { ATTR, EL, INFO } from "./paths.js";
 import { titlePageUrl } from "./urls.js";
 import {
@@ -137,8 +138,6 @@ function toSummary(element: XmlElement, kind: TitleKind): TitleSummary | null {
  * announces itself, so it must not be silent. It goes through the caller's
  * logger rather than straight to stderr, so it honours ANN_LOG_LEVEL.
  */
-export type OnSkip = (skipped: number, total: number) => void;
-
 /** Search results, reduced to rows. Everything heavy is dropped here. */
 export function parseTitleList(xml: string, url: string, onSkip?: OnSkip): TitleSummary[] {
   const root = expectRoot(parseDocument(xml, url), EL.root, url);

@@ -65,6 +65,18 @@ export function rateLimited(url: string, retryAfterMs: number): AnnError {
 }
 
 /**
+ * Raised when a request completes with nothing in the body. Anime News Network
+ * sends no status and no header to explain that answer, so the error states
+ * what arrived and leaves the pacing alone.
+ */
+export function emptyResponse(url: string): AnnError {
+  return new AnnError("network_error", "Anime News Network returned an empty response body.", {
+    url,
+    hint: "Call the same tool again with the same arguments; an edge under strain answers this way and recovers.",
+  });
+}
+
+/**
  * Raised when a response arrives but cannot be read as the XML we expect. The
  * common cause is a reports.xml id the site does not know, which it answers
  * with a full HTML page under HTTP 200.

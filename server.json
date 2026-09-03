@@ -40,6 +40,31 @@
           "isRequired": false
         },
         {
+          "name": "ANN_TIMEOUT_MS",
+          "description": "Deadline for one request, from 1000 to 120000. Default 15000.",
+          "isRequired": false
+        },
+        {
+          "name": "ANN_MAX_RETRIES",
+          "description": "Attempts after a transient failure, from 0 to 10. Default 3.",
+          "isRequired": false
+        },
+        {
+          "name": "ANN_CACHE_TTL_MS",
+          "description": "How long an encyclopedia entry stays in memory, from 0 to 86400000. Default 3600000.",
+          "isRequired": false
+        },
+        {
+          "name": "ANN_NEWS_CACHE_TTL_MS",
+          "description": "How long a news feed stays in memory, from 0 to 86400000. Default 300000.",
+          "isRequired": false
+        },
+        {
+          "name": "ANN_CACHE_MAX_ENTRIES",
+          "description": "Answers held in memory at once, from 0 to 10000. Default 200.",
+          "isRequired": false
+        },
+        {
           "name": "ANN_LOG_LEVEL",
           "description": "silent, error, info or debug. Default error.",
           "isRequired": false
