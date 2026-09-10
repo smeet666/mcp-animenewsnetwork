@@ -126,7 +126,7 @@ export function ok(
   body: string,
   options: { notes?: string[]; sourceUrl?: string } = {},
 ): ToolResult {
-  const attribution = options.sourceUrl ? `${ATTRIBUTION} — ${options.sourceUrl}` : ATTRIBUTION;
+  const attribution = options.sourceUrl ? `${ATTRIBUTION} (${options.sourceUrl})` : ATTRIBUTION;
   // The notes are what qualifies the answer: that a list was capped, that a
   // section is empty rather than unread. They sit with the attribution because
   // that is the part of the block truncation cannot reach.
