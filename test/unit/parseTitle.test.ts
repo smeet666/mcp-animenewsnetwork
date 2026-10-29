@@ -65,7 +65,10 @@ describe("parseTitleList", () => {
     it("carries no field beyond the summary shape", () => {
       const rows = parseTitleList(searchResults, URL_SEARCH);
       for (const row of rows) {
-        expect(Object.keys(row).sort(), `row ${row.id} keys`).toEqual(SUMMARY_KEYS);
+        expect(
+          Object.keys(row).sort((a, b) => Number(a > b) - Number(a < b)),
+          `row ${row.id} keys`,
+        ).toEqual(SUMMARY_KEYS);
       }
     });
 

@@ -45,8 +45,8 @@ const manifest = JSON.parse(readFileSync(join(ROOT, "lhm.plugin.json"), "utf8"))
 /** The names a schema declares, and the ones it says an answer always carries. */
 function shapeOf(schema: Schema | undefined): { properties: string[]; required: string[] } {
   return {
-    properties: Object.keys(schema?.properties ?? {}).sort(),
-    required: [...(schema?.required ?? [])].sort(),
+    properties: Object.keys(schema?.properties ?? {}).sort((a, b) => Number(a > b) - Number(a < b)),
+    required: [...(schema?.required ?? [])].sort((a, b) => Number(a > b) - Number(a < b)),
   };
 }
 

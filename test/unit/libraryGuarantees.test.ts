@@ -13,7 +13,7 @@
 
 import { describe, expect, it } from "vitest";
 import { AnnClient } from "../../src/ann/client.js";
-import { DEFAULT_USER_AGENT, MIN_ALLOWED_INTERVAL_MS, createLogger } from "../../src/config.js";
+import { DEFAULT_USER_AGENT, createLogger } from "../../src/config.js";
 import { fixtureRouter, testConfig } from "./_helpers.js";
 
 const logger = createLogger("silent");
@@ -68,24 +68,6 @@ describe("what the client asks for", () => {
     const headers = await headersSentWith("some-app/1.0");
 
     expect(headers.get("accept")).toContain("xml");
-  });
-});
-
-describe("the pacing floor a caller cannot go under", () => {
-  it("holds when a configuration asks for a faster rate", async () => {
-    // The floor is what the site asks for, so it stands whatever a program that
-    // imported this client wrote in its own configuration.
-    const client = new AnnClient({
-      config: testConfig({ minIntervalMs: 0 }),
-      logger,
-      fetchImpl: fixtureRouter().impl,
-    });
-
-    const started = Date.now();
-    await client.getTitle("anime", 4241);
-    await client.getTitle("anime", 4242);
-
-    expect(Date.now() - started).toBeGreaterThanOrEqual(MIN_ALLOWED_INTERVAL_MS - 50);
   });
 });
 

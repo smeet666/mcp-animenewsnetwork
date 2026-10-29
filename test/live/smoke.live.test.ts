@@ -66,7 +66,7 @@ describe.runIf(enabled)("live Anime News Network", () => {
     // popular query is not a leak. What must hold is the shape of a row and its
     // weight, which is what a leak would change.
     for (const row of search.data) {
-      expect(Object.keys(row).sort()).toEqual([
+      expect(Object.keys(row).sort((a, b) => Number(a > b) - Number(a < b))).toEqual([
         "id",
         "kind",
         "name",
