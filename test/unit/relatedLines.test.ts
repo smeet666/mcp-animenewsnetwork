@@ -249,7 +249,7 @@ describe("a related line in the text block", () => {
 
       for (const row of related) {
         expect(
-          Object.keys(row).sort(),
+          Object.keys(row).sort((a, b) => Number(a > b) - Number(a < b)),
           "the payload states something about the related entry the site did not",
         ).toEqual(["direction", "id", "relation"]);
       }
@@ -315,6 +315,8 @@ describe("a related entry of a served record", () => {
     // carries it.
     const item = related?.items ?? related?.anyOf?.map((branch: any) => branch.items).find(Boolean);
 
-    expect(Object.keys(item?.properties ?? {}).sort()).toEqual(["direction", "id", "relation"]);
+    expect(
+      Object.keys(item?.properties ?? {}).sort((a, b) => Number(a > b) - Number(a < b)),
+    ).toEqual(["direction", "id", "relation"]);
   });
 });

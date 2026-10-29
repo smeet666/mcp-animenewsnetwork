@@ -51,6 +51,12 @@ Everything else here holds the same shapes.
 - **The registry descriptor and the plugin manifest are held to the server by a
   test.** The first announced three of the eight settings the code reads, and the
   second still described an older result shape.
+- **Node.js 24.22.1 or later**, inside the Node.js 24 line. The package, the
+  extension manifest and the image all declare it.
+- **zod `^4.6.7`.** Below 4.6.6, zod can exhaust memory while
+  validating oversized constrained collections, and the range accepts none of
+  those versions.
+- **Dependency floors:** `@modelcontextprotocol/sdk` `^1.32.2`, `@rgrove/parse-xml` `^5.0.0`.
 
 ## 2.0.1
 
